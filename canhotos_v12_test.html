@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1a4fcf">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Canhotos">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Canhotos</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+:root{
+  --bg:#f5f5f3;--surface:#fff;--border:rgba(0,0,0,.09);--border-md:rgba(0,0,0,.16);
+  --text:#1a1a18;--muted:#6b6b67;--accent:#1a4fcf;--accent-bg:#eef2fd;
+  --success:#1a7a45;--success-bg:#eaf6ef;--danger:#b02020;--danger-bg:#fdf0f0;
+  --warning:#7a5500;--warning-bg:#fef8e7;
+  --radius:12px;--radius-sm:8px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#141412;--surface:#1e1e1c;--border:rgba(255,255,255,.09);--border-md:rgba(255,255,255,.16);
+  --text:#f0f0ec;--muted:#9a9a94;--accent:#6a9aff;--accent-bg:#1a2540;
+  --success:#4cad75;--success-bg:#0f2a1c;--danger:#e06060;--danger-bg:#2a0f0f;
+  --warning:#d4aa30;--warning-bg:#231e08;
+}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:72px}
+.topbar{background:var(--surface);border-bottom:.5px solid var(--border);padding:0 1rem;display:flex;align-items:center;justify-content:space-between;height:54px;position:sticky;top:0;z-index:50}
+.topbar-title{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:600}
+.topbar-title i{color:var(--accent);font-size:20px}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.admin-badge{font-size:11px;background:var(--accent-bg);color:var(--accent);padding:3px 8px;border-radius:20px;font-weight:600;display:none}
+.admin-badge.show{display:block}
+.btn-icon{background:none;border:.5px solid var(--border-md);border-radius:var(--radius-sm);color:var(--muted);width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+.sync-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;border:.5px solid var(--border-md);border-radius:var(--radius-sm);background:transparent;color:var(--text);font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.sync-btn:disabled{opacity:.5;cursor:not-allowed}
+.sync-btn.ok{color:var(--success);border-color:var(--success)}
+.sync-btn.err{color:var(--danger);border-color:var(--danger)}
+.sync-btn.syncing{color:var(--accent);border-color:var(--accent)}
+.offline-bar{background:var(--warning-bg);color:var(--warning);font-size:13px;text-align:center;padding:7px;display:none}
+.offline-bar.show{display:block}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:.5px solid var(--border);display:flex;z-index:50;padding-bottom:env(safe-area-inset-bottom)}
+.bottom-nav button{flex:1;background:none;border:none;padding:10px 0 8px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:var(--muted);cursor:pointer;font-family:inherit}
+.bottom-nav button i{font-size:22px}
+.bottom-nav button.active{color:var(--accent);font-weight:500}
+.page{display:none}.page.active{display:block}
+.container{max-width:600px;margin:0 auto;padding:1.25rem 1rem}
+.card{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem}
+.card h2{font-size:15px;font-weight:600;margin-bottom:1.1rem;display:flex;align-items:center;gap:7px}
+.card h2 i{color:var(--accent)}
+.field{margin-bottom:1rem}
+.field label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
+.field input{width:100%;padding:11px 13px;border:.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-size:15px;font-family:inherit}
+.field input:focus{outline:none;border-color:var(--accent);background:var(--surface)}
+.field input::placeholder{color:var(--muted);opacity:.7}
+.foto-label{display:block;font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+.foto-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin-top:4px}
+.foto-item{position:relative;aspect-ratio:4/3}
+.foto-item img{width:100%;height:100%;object-fit:cover;border-radius:var(--radius-sm);border:.5px solid var(--border);display:block;cursor:pointer}
+.foto-item .rm{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.65);color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.foto-item .prog{position:absolute;inset:0;background:rgba(0,0,0,.5);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:600}
+.foto-add{aspect-ratio:4/3;border:1.5px dashed var(--border-md);border-radius:var(--radius-sm);background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;color:var(--muted);font-size:11px}
+.foto-add i{font-size:24px}
+#cam-in,#cam-edit{display:none}
+.btn-save{width:100%;padding:13px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:1.1rem}
+.btn-save:disabled{opacity:.5;cursor:not-allowed}
+.alert{padding:10px 13px;border-radius:var(--radius-sm);font-size:13px;margin-top:10px;display:none;align-items:center;gap:7px}
+.alert.show{display:flex}
+.alert-success{background:var(--success-bg);color:var(--success)}
+.alert-danger{background:var(--danger-bg);color:var(--danger)}
+.alert-info{background:var(--accent-bg);color:var(--accent)}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem}
+.stat{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius);padding:12px 8px;text-align:center}
+.stat .n{font-size:22px;font-weight:700;color:var(--accent)}
+.stat .l{font-size:11px;color:var(--muted);margin-top:1px}
+.filters{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:1rem;display:flex;flex-direction:column;gap:8px}
+.filters input{width:100%;padding:10px 13px;border:.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-size:14px;font-family:inherit}
+.filters input:focus{outline:none;border-color:var(--accent)}
+.filter-row{display:flex;gap:8px}
+.filter-row input[type=date]{flex:1}
+.btn-clear{background:none;border:.5px solid var(--border-md);border-radius:var(--radius-sm);color:var(--muted);padding:10px 12px;cursor:pointer;font-size:13px;white-space:nowrap;font-family:inherit}
+.btn-clear:hover{color:var(--danger);border-color:var(--danger)}
+.reg-list{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.reg-item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:.5px solid var(--border);cursor:pointer}
+.reg-item:last-child{border-bottom:none}
+.reg-item:hover{background:var(--bg)}
+.thumb{width:56px;height:42px;object-fit:cover;border-radius:6px;border:.5px solid var(--border);flex-shrink:0}
+.thumb-ph{width:56px;height:42px;border-radius:6px;border:.5px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--muted);font-size:18px}
+.reg-info{flex:1;min-width:0}
+.reg-info .t{font-weight:500;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.reg-info .s{font-size:12px;color:var(--muted);margin-top:1px}
+.empty{text-align:center;padding:2.5rem 1rem;color:var(--muted)}
+.empty i{font-size:36px;display:block;margin-bottom:10px;opacity:.4}
+.grupo-label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:0 2px;margin-bottom:6px}
+.grupo-wrap{margin-bottom:1rem}
+/* Modais */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius) var(--radius) 0 0;padding:1.5rem;width:100%;max-width:600px;max-height:88vh;overflow-y:auto;padding-bottom:calc(1.5rem + env(safe-area-inset-bottom))}
+.modal-handle{width:40px;height:4px;background:var(--border-md);border-radius:2px;margin:0 auto 1.2rem}
+.modal-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem}
+.modal-head h3{font-size:17px;font-weight:600}
+.modal-close{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer}
+.modal-field{margin-bottom:.75rem}
+.modal-field .lbl{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:2px}
+.modal-field .val{font-size:14px}
+.modal-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:.5rem}
+.modal-gallery img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:var(--radius-sm);border:.5px solid var(--border);cursor:pointer}
+.modal-actions{display:flex;gap:8px;margin-top:1.25rem}
+.btn-edit{flex:1;padding:11px;background:var(--accent-bg);color:var(--accent);border:.5px solid var(--accent);border-radius:var(--radius-sm);font-size:14px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-del{flex:1;padding:11px;background:var(--danger-bg);color:var(--danger);border:.5px solid var(--danger);border-radius:var(--radius-sm);font-size:14px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px}
+.modal-edit-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:flex-end;justify-content:center}
+.modal-edit-bg.open{display:flex}
+.modal-edit{background:var(--surface);border-radius:var(--radius) var(--radius) 0 0;padding:1.5rem;width:100%;max-width:600px;max-height:92vh;overflow-y:auto;padding-bottom:calc(1.5rem + env(safe-area-inset-bottom))}
+/* PIN */
+.pin-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;align-items:center;justify-content:center}
+.pin-bg.open{display:flex}
+.pin-box{background:var(--surface);border-radius:var(--radius);padding:2rem 1.5rem;width:280px;text-align:center}
+.pin-box h3{font-size:16px;font-weight:600;margin-bottom:.4rem}
+.pin-box p{font-size:13px;color:var(--muted);margin-bottom:1.2rem}
+.pin-input{width:100%;padding:12px;border:.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-size:22px;letter-spacing:8px;text-align:center;font-family:inherit}
+.pin-input:focus{outline:none;border-color:var(--accent)}
+.pin-err{font-size:12px;color:var(--danger);margin-top:8px;min-height:16px}
+.pin-actions{display:flex;gap:8px;margin-top:1rem}
+.pin-btn{flex:1;padding:11px;border-radius:var(--radius-sm);font-size:14px;cursor:pointer;font-family:inherit;font-weight:500}
+.pin-cancel{background:var(--bg);border:.5px solid var(--border-md);color:var(--text)}
+.pin-ok{background:var(--accent);border:none;color:#fff}
+/* Edit fotos */
+.edit-foto-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px;margin-top:4px}
+.edit-foto-item{position:relative;aspect-ratio:4/3}
+.edit-foto-item img{width:100%;height:100%;object-fit:cover;border-radius:6px;border:.5px solid var(--border);display:block}
+.edit-foto-item .rm{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.65);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.edit-foto-item .prog{position:absolute;inset:0;background:rgba(0,0,0,.5);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600}
+.edit-foto-add{aspect-ratio:4/3;border:1.5px dashed var(--border-md);border-radius:6px;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:var(--muted);font-size:10px}
+.edit-foto-add i{font-size:20px}
+/* Lightbox */
+.lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:500;align-items:center;justify-content:center}
+.lightbox.open{display:flex}
+.lightbox img{max-width:100%;max-height:100vh;object-fit:contain}
+.lb-close{position:fixed;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div class="offline-bar" id="offline-bar"><i class="ti ti-wifi-off"></i> Sem conexão — dados salvos localmente</div>
+
+<div class="topbar">
+  <div class="topbar-title"><i class="ti ti-file-check"></i> Canhotos</div>
+  <div class="topbar-right">
+    <span class="admin-badge" id="admin-badge"><i class="ti ti-shield-check"></i> Admin</span>
+    <button class="btn-icon" id="btn-admin" onclick="abrirPinOuLogout()" title="Admin"><i class="ti ti-lock"></i></button>
+    <button class="sync-btn" id="sync-btn" onclick="sincronizar()">
+      <i class="ti ti-refresh"></i> Atualizar
+    </button>
+  </div>
+</div>
+
+<!-- REGISTRAR -->
+<div id="page-registrar" class="page active">
+  <div class="container">
+    <div class="card">
+      <h2><i class="ti ti-plus"></i> Novo registro</h2>
+      <div class="field">
+        <label>Romaneio</label>
+        <input type="text" id="f-rom" placeholder="Ex: ROM-001" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>Motorista</label>
+        <input type="text" id="f-mot" placeholder="Ex: João Silva" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>Data e hora da finalização</label>
+        <input type="datetime-local" id="f-dt">
+      </div>
+      <div id="nf-review-area" style="display:none;margin-bottom:1rem">
+        <div style="font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">
+          NFs identificadas pelo OCR — revise antes de salvar
+        </div>
+        <div id="nf-tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+        <div style="display:flex;gap:6px">
+          <input type="text" id="nf-add-input" placeholder="Adicionar NF manualmente…"
+            style="flex:1;padding:9px 12px;border:.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-size:14px;font-family:inherit"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarNFManual()}">
+          <button onclick="adicionarNFManual()" style="padding:9px 14px;background:var(--accent-bg);color:var(--accent);border:.5px solid var(--accent);border-radius:var(--radius-sm);font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap">
+            <i class="ti ti-plus"></i> Adicionar
+          </button>
+        </div>
+        <div id="ocr-status" style="font-size:12px;color:var(--accent);margin-top:6px;display:none;align-items:center;gap:6px">
+          <span class="spinner" style="color:var(--accent);width:12px;height:12px;border-width:1.5px"></span> Lendo NFs da foto…
+        </div>
+      </div>
+      <div id="nf-review-placeholder" style="margin-bottom:1rem">
+        <div style="font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">NFs da entrega</div>
+        <div style="font-size:13px;color:var(--muted);padding:10px 13px;border:.5px dashed var(--border-md);border-radius:var(--radius-sm);background:var(--bg)">
+          <i class="ti ti-scan" style="margin-right:4px"></i>Adicione uma foto para extrair as NFs automaticamente
+        </div>
+      </div>
+      <div>
+        <span class="foto-label">Fotos do canhoto</span>
+        <input type="file" accept="image/*" multiple id="cam-in" onchange="onFotos(event)">
+        <div class="foto-grid" id="fotos-prev">
+          <div class="foto-add" onclick="document.getElementById('cam-in').click()">
+            <i class="ti ti-camera-plus"></i><span>Adicionar</span>
+          </div>
+        </div>
+        <div class="alert alert-info" id="foto-status"></div>
+      </div>
+      <button class="btn-save" id="btn-salvar" onclick="salvarReg()">
+        <i class="ti ti-check"></i> Salvar registro
+      </button>
+      <div class="alert alert-success" id="n-ok"></div>
+      <div class="alert alert-danger"  id="n-err"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CONSULTAR -->
+<div id="page-consultar" class="page">
+  <div class="container">
+    <div class="stats-row">
+      <div class="stat"><div class="n" id="s-total">0</div><div class="l">Total</div></div>
+      <div class="stat"><div class="n" id="s-hoje">0</div><div class="l">Hoje</div></div>
+      <div class="stat"><div class="n" id="s-sync">—</div><div class="l">Atualizado</div></div>
+    </div>
+    <div id="painel-admin" style="display:none">
+      <div class="card" style="margin-bottom:1rem;border-color:var(--accent)">
+        <h2><i class="ti ti-wand"></i> Reprocessar OCR em lote</h2>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:1rem">Lê as fotos de todos os registros sem NFs cadastradas e extrai os números automaticamente. Pode demorar alguns minutos.</p>
+        <div id="ocr-lote-prog" style="display:none;font-size:13px;color:var(--accent);margin-bottom:.75rem;display:flex;align-items:center;gap:6px"></div>
+        <button class="btn-save" id="btn-ocr-lote" onclick="reprocessarLote()" style="margin-top:0">
+          <i class="ti ti-scan"></i> Iniciar leitura em lote
+        </button>
+      </div>
+    </div>
+    <div class="filters">
+      <input type="search" id="busca" placeholder="🔍 Romaneio, motorista ou Nº NF…" oninput="renderLista()">
+      <div class="filter-row">
+        <input type="date" id="filtro-data" onchange="renderLista()">
+        <button class="btn-clear" onclick="limparData()"><i class="ti ti-x"></i> Limpar</button>
+      </div>
+    </div>
+    <div id="lista-reg"></div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <button class="active" id="nav-registrar" onclick="navTo('registrar')">
+    <i class="ti ti-plus"></i>Registrar
+  </button>
+  <button id="nav-consultar" onclick="navTo('consultar')">
+    <i class="ti ti-list-search"></i>Consultar
+  </button>
+</nav>
+
+<!-- Modal detalhe -->
+<div class="modal-bg" id="modal-bg" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-head">
+      <h3 id="m-titulo"></h3>
+      <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <div id="m-corpo"></div>
+    <div class="modal-actions" id="m-actions" style="display:none">
+      <button class="btn-edit" onclick="abrirEdicao()"><i class="ti ti-pencil"></i> Editar</button>
+      <button class="btn-del" onclick="excluirReg()"><i class="ti ti-trash"></i> Excluir</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal edição -->
+<div class="modal-edit-bg" id="modal-edit-bg" onclick="if(event.target===this)closeEdit()">
+  <div class="modal-edit">
+    <div class="modal-handle"></div>
+    <div class="modal-head">
+      <h3>Editar registro</h3>
+      <button class="modal-close" onclick="closeEdit()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="field">
+      <label>Romaneio</label>
+      <input type="text" id="e-rom" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>Motorista</label>
+      <input type="text" id="e-mot" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>Data e hora da finalização</label>
+      <input type="datetime-local" id="e-dt">
+    </div>
+    <div style="margin-bottom:1rem">
+      <div style="font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">NFs da entrega</div>
+      <div id="e-nf-tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="e-nf-add-input" placeholder="Adicionar NF…"
+          style="flex:1;padding:9px 12px;border:.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-size:14px;font-family:inherit"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarNFEdit()}">
+        <button onclick="adicionarNFEdit()" style="padding:9px 14px;background:var(--accent-bg);color:var(--accent);border:.5px solid var(--accent);border-radius:var(--radius-sm);font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap">
+          <i class="ti ti-plus"></i> Adicionar
+        </button>
+      </div>
+    </div>
+    <div>
+      <span class="foto-label">Fotos do canhoto</span>
+      <input type="file" accept="image/*" multiple id="cam-edit" onchange="onFotosEdit(event)">
+      <div class="edit-foto-grid" id="edit-fotos-prev"></div>
+      <div class="alert alert-info" id="edit-foto-status"></div>
+    </div>
+    <div class="alert alert-danger" id="edit-err" style="margin-top:.5rem"></div>
+    <button class="btn-save" id="btn-salvar-edit" onclick="salvarEdicao()">
+      <i class="ti ti-check"></i> Salvar alterações
+    </button>
+  </div>
+</div>
+
+<!-- Modal PIN -->
+<div class="pin-bg" id="pin-bg">
+  <div class="pin-box">
+    <h3><i class="ti ti-lock"></i> Acesso Admin</h3>
+    <p>Digite o código de acesso</p>
+    <input type="password" inputmode="numeric" maxlength="6" class="pin-input" id="pin-input"
+      placeholder="••••" onkeydown="if(event.key==='Enter')confirmarPin()">
+    <div class="pin-err" id="pin-err"></div>
+    <div class="pin-actions">
+      <button class="pin-btn pin-cancel" onclick="fecharPin()">Cancelar</button>
+      <button class="pin-btn pin-ok" onclick="confirmarPin()">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lb-close"><i class="ti ti-x"></i></button>
+  <img id="lb-img" src="" alt="">
+</div>
+
+<script type="module">
+// ── Tesseract OCR ──────────────────────────────────────────────────────────
+let tesseractWorker = null;
+async function getTesseract(){
+  if(tesseractWorker) return tesseractWorker;
+  await new Promise((res,rej)=>{
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+    s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+  tesseractWorker = await Tesseract.createWorker('por+eng', 1, { logger: ()=>{} });
+  return tesseractWorker;
+}
+
+async function extrairNFs(imageUrl){
+  try {
+    const w = await getTesseract();
+    const { data: { text } } = await w.recognize(imageUrl);
+    // Extrai números próximos a palavras-chave de NF
+    const linhas = text.split('\n');
+    const numeros = new Set();
+    const reNF  = /(?:nf|n\.f\.|nota|nota\s*fiscal|n[uú]m(?:ero)?|doc(?:umento)?|n[oº°])[^\d]{0,10}(\d{4,9})/gi;
+    const reBruto = /\b(\d{5,9})\b/g;
+    for(const linha of linhas){
+      let m;
+      // Primeiro: padrões com rótulo (mais confiável)
+      while((m = reNF.exec(linha)) !== null) numeros.add(m[1]);
+    }
+    // Se não encontrou nada com rótulo, cai para números soltos de 5-9 dígitos
+    if(numeros.size === 0){
+      let m;
+      while((m = reBruto.exec(text)) !== null) numeros.add(m[1]);
+    }
+    return [...numeros].slice(0, 30); // limite razoável
+  } catch(e){ console.warn('OCR erro:', e); return []; }
+}
+
+// ── NF tags — novo registro ────────────────────────────────────────────────
+let nfList = []; // array de strings
+
+window.adicionarNFManual = () => {
+  const inp = document.getElementById('nf-add-input');
+  const val = inp.value.trim().replace(/\D/g,'');
+  if(val && !nfList.includes(val)){ nfList.push(val); renderNFTags(); }
+  inp.value = '';
+};
+
+window.removerNF = (nf) => {
+  nfList = nfList.filter(n => n !== nf);
+  renderNFTags();
+};
+
+function renderNFTags(){
+  const area = document.getElementById('nf-review-area');
+  const ph   = document.getElementById('nf-review-placeholder');
+  if(nfList.length > 0 || document.getElementById('ocr-status').style.display !== 'none'){
+    area.style.display = 'block';
+    ph.style.display   = 'none';
+  }
+  document.getElementById('nf-tags').innerHTML = nfList.map(nf =>
+    `<span style="display:inline-flex;align-items:center;gap:5px;background:var(--accent-bg);color:var(--accent);
+      border:.5px solid var(--accent);border-radius:20px;padding:4px 10px;font-size:13px;font-weight:500">
+      ${nf}
+      <button onclick="removerNF('${nf}')" style="background:none;border:none;color:var(--accent);cursor:pointer;
+        font-size:14px;line-height:1;padding:0;display:flex;align-items:center">×</button>
+    </span>`
+  ).join('');
+}
+
+// ── NF tags — edição ───────────────────────────────────────────────────────
+let nfListEdit = [];
+
+window.adicionarNFEdit = () => {
+  const inp = document.getElementById('e-nf-add-input');
+  const val = inp.value.trim().replace(/\D/g,'');
+  if(val && !nfListEdit.includes(val)){ nfListEdit.push(val); renderNFTagsEdit(); }
+  inp.value = '';
+};
+
+window.removerNFEdit = (nf) => {
+  nfListEdit = nfListEdit.filter(n => n !== nf);
+  renderNFTagsEdit();
+};
+
+function renderNFTagsEdit(){
+  document.getElementById('e-nf-tags').innerHTML = nfListEdit.length
+    ? nfListEdit.map(nf =>
+        `<span style="display:inline-flex;align-items:center;gap:5px;background:var(--accent-bg);color:var(--accent);
+          border:.5px solid var(--accent);border-radius:20px;padding:4px 10px;font-size:13px;font-weight:500">
+          ${nf}
+          <button onclick="removerNFEdit('${nf}')" style="background:none;border:none;color:var(--accent);cursor:pointer;
+            font-size:14px;line-height:1;padding:0;display:flex;align-items:center">×</button>
+        </span>`
+      ).join('')
+    : '<span style="font-size:13px;color:var(--muted)">Nenhuma NF cadastrada</span>';
+}
+
+import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, collection, setDoc, deleteDoc, doc, serverTimestamp, onSnapshot }
+                           from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+// ── Configurações ──────────────────────────────────────────────────────────
+const CLOUD_NAME    = 'esing0no';
+const UPLOAD_PRESET = 'Canhotos';
+const PIN_CORRETO   = '5410';
+const LS            = 'canhotos_v11';
+
+const app = initializeApp({
+  apiKey:"AIzaSyB9h57BaoKMOjJYbSQRUU8YynQ4hgIOmaw",
+  authDomain:"canhotos-digitais.firebaseapp.com",
+  projectId:"canhotos-digitais",
+  storageBucket:"canhotos-digitais.firebasestorage.app",
+  messagingSenderId:"819121494501",
+  appId:"1:819121494501:web:8e348dcab1ef0bb6dc770c"
+});
+const db = getFirestore(app);
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function ldb(){ try{ return JSON.parse(localStorage.getItem(LS)||'{"r":[]}'); }catch(e){ return {r:[]}; } }
+// Remove imagens embutidas em base64 (herdadas da era Firebase) — elas estouram
+// a cota de 5MB do localStorage. As fotos reais ficam no Cloudinary via URL.
+function semBase64(arr){
+  return Array.isArray(arr) ? arr.filter(u => typeof u === 'string' && !u.startsWith('data:')) : [];
+}
+
+function lsave(d){
+  // Nível 1: salva tudo, mas sem base64
+  const limpo = { ...d, r: d.r.map(r => ({ ...r, fotos: semBase64(r.fotos), thumbs: semBase64(r.thumbs) })) };
+  try { localStorage.setItem(LS, JSON.stringify(limpo)); return; }
+  catch(e){ if(e.name !== 'QuotaExceededError') throw e; }
+
+  // Nível 2: descarta thumbs (recuperáveis a partir da URL original)
+  const semThumbs = { ...limpo, r: limpo.r.map(r => ({ ...r, thumbs: [] })) };
+  try { localStorage.setItem(LS, JSON.stringify(semThumbs)); console.warn('localStorage: thumbs descartados por falta de espaço'); return; }
+  catch(e){ if(e.name !== 'QuotaExceededError') throw e; }
+
+  // Nível 3: só metadados + NFs (o que importa para a busca). Fotos vêm do Firestore.
+  const soMeta = { ...limpo, r: limpo.r.map(r => ({ ...r, fotos: [], thumbs: [] })) };
+  try { localStorage.setItem(LS, JSON.stringify(soMeta)); console.warn('localStorage: cache reduzido a metadados'); return; }
+  catch(e){ console.error('localStorage cheio — operando somente com Firestore.', e); }
+}
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function fmtDt(iso){
+  if(!iso) return '—';
+  const d=new Date(iso);
+  return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+}
+function isoDate(iso){ return iso?iso.slice(0,10):''; }
+
+// ── Cloudinary upload ──────────────────────────────────────────────────────
+async function uploadCloudinary(file, onProgress){
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('upload_preset', UPLOAD_PRESET);
+  fd.append('folder', 'canhotos');
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`);
+    xhr.upload.onprogress = e => {
+      if(e.lengthComputable) onProgress(Math.round(e.loaded/e.total*100));
+    };
+    xhr.onload = () => {
+      if(xhr.status === 200){
+        const r = JSON.parse(xhr.responseText);
+        resolve({ url: r.secure_url, thumb: r.secure_url.replace('/upload/', '/upload/w_300,h_225,c_fill,q_auto:best,f_auto/') });
+      } else {
+        reject(new Error('Upload falhou: ' + xhr.status));
+      }
+    };
+    xhr.onerror = () => reject(new Error('Erro de rede no upload'));
+    xhr.send(fd);
+  });
+}
+
+// ── Admin ──────────────────────────────────────────────────────────────────
+function isAdmin(){ return sessionStorage.getItem('admin_ok')==='1'; }
+function setAdmin(v){
+  v ? sessionStorage.setItem('admin_ok','1') : sessionStorage.removeItem('admin_ok');
+  const badge = document.getElementById('admin-badge');
+  const icon  = document.querySelector('#btn-admin i');
+  if(isAdmin()){ badge.classList.add('show'); icon.className='ti ti-lock-open'; }
+  else          { badge.classList.remove('show'); icon.className='ti ti-lock'; }
+  atualizarPainelAdmin();
+}
+
+window.abrirPinOuLogout = () => {
+  if(isAdmin()){ if(confirm('Sair do modo admin?')) setAdmin(false); return; }
+  document.getElementById('pin-input').value='';
+  document.getElementById('pin-err').textContent='';
+  document.getElementById('pin-bg').classList.add('open');
+  setTimeout(()=>document.getElementById('pin-input').focus(), 100);
+};
+window.fecharPin    = () => document.getElementById('pin-bg').classList.remove('open');
+window.confirmarPin = () => {
+  if(document.getElementById('pin-input').value.trim() === PIN_CORRETO){
+    setAdmin(true);
+    document.getElementById('pin-bg').classList.remove('open');
+  } else {
+    document.getElementById('pin-err').textContent = 'Código incorreto.';
+    document.getElementById('pin-input').value='';
+    document.getElementById('pin-input').focus();
+  }
+};
+
+// ── Sync ───────────────────────────────────────────────────────────────────
+function setSyncBtn(state, label){
+  const btn = document.getElementById('sync-btn');
+  btn.className = 'sync-btn ' + state;
+  btn.innerHTML = state==='syncing'
+    ? `<span class="spinner"></span> ${label}`
+    : `<i class="ti ti-refresh"></i> ${label}`;
+  btn.disabled = state==='syncing';
+}
+
+let unsubscribe = null;
+function iniciarEscuta(){
+  if(unsubscribe) unsubscribe();
+  unsubscribe = onSnapshot(collection(db,'registros'), snap => {
+    const registros = [];
+    snap.forEach(ds => {
+      const r = ds.data();
+      registros.push({
+        id:      r.id||ds.id,
+        romNum:  r.romNum||'',
+        motNome: r.motNome||'',
+        nfNums:  Array.isArray(r.nfNums)?r.nfNums:[],
+        dt:      r.dt||'',
+        em:      r.em||'',
+        fotos:   Array.isArray(r.fotos)?r.fotos:[],
+        thumbs:  Array.isArray(r.thumbs)?r.thumbs:[]
+      });
+    });
+    registros.sort((a,b)=>new Date(b.em||0)-new Date(a.em||0));
+    lsave({r:registros});
+    document.getElementById('s-sync').textContent =
+      new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    setSyncBtn('ok','Atualizado ✓');
+    if(document.getElementById('page-consultar').classList.contains('active')) renderLista();
+  }, err => {
+    setSyncBtn('err', err.code==='permission-denied'?'Sem permissão':'Reconectando…');
+    setTimeout(()=>{ if(navigator.onLine) iniciarEscuta(); }, 5000);
+  });
+}
+
+window.sincronizar = () => {
+  if(!navigator.onLine){ setSyncBtn('err','Sem internet'); return; }
+  setSyncBtn('syncing','Atualizando…');
+  iniciarEscuta();
+};
+window.addEventListener('online',  () => { document.getElementById('offline-bar').classList.remove('show'); iniciarEscuta(); });
+window.addEventListener('offline', () => {
+  document.getElementById('offline-bar').classList.add('show');
+  setSyncBtn('err','Offline');
+  if(unsubscribe){ unsubscribe(); unsubscribe=null; }
+});
+
+// ── Fotos novo registro ────────────────────────────────────────────────────
+// Cada item: { url, thumb, uploading, progress }
+let fotos = [];
+let uploadando = 0;
+
+window.onFotos = async (e) => {
+  const arqs = Array.from(e.target.files); e.target.value='';
+  if(!arqs.length) return;
+  const st = document.getElementById('foto-status');
+
+  for(const file of arqs){
+    if(!navigator.onLine){
+      st.innerHTML='<i class="ti ti-alert-circle"></i> Sem internet — conecte-se para enviar fotos.';
+      st.classList.add('show'); return;
+    }
+    st.classList.remove('show');
+    const idx = fotos.length;
+    fotos.push({ url:null, thumb:null, uploading:true, progress:0 });
+    uploadando++;
+    renderFotos();
+    try{
+      const res = await uploadCloudinary(file, pct => {
+        fotos[idx].progress = pct; renderFotos();
+      });
+      fotos[idx] = { url:res.url, thumb:res.thumb, uploading:false, progress:100 };
+      // OCR na primeira foto
+      if(idx === 0){
+        const ocrSt = document.getElementById('ocr-status');
+        const area  = document.getElementById('nf-review-area');
+        const ph    = document.getElementById('nf-review-placeholder');
+        ocrSt.style.display = 'flex';
+        area.style.display  = 'block';
+        ph.style.display    = 'none';
+        const nfs = await extrairNFs(res.url);
+        ocrSt.style.display = 'none';
+        nfs.forEach(n => { if(!nfList.includes(n)) nfList.push(n); });
+        renderNFTags();
+      }
+    } catch(err){
+      fotos.splice(idx,1);
+      st.innerHTML=`<i class="ti ti-alert-circle"></i> Erro no upload: ${err.message}`;
+      st.classList.add('show');
+    }
+    uploadando--;
+    renderFotos();
+  }
+};
+
+window.remFoto = (i) => { fotos.splice(i,1); renderFotos(); };
+
+window.renderFotos = () => {
+  document.getElementById('fotos-prev').innerHTML =
+    fotos.map((f,i) =>
+      f.uploading
+        ? `<div class="foto-item"><div style="width:100%;height:100%;background:var(--bg);border-radius:var(--radius-sm);border:.5px solid var(--border);display:flex;align-items:center;justify-content:center"><span class="spinner" style="color:var(--accent)"></span></div><div class="prog">${f.progress}%</div></div>`
+        : `<div class="foto-item"><img src="${f.thumb||f.url}" loading="lazy" onclick="openLb('${f.url}')"><button class="rm" onclick="remFoto(${i})">✕</button></div>`
+    ).join('') +
+    `<div class="foto-add" onclick="document.getElementById('cam-in').click()"><i class="ti ti-camera-plus"></i><span>Adicionar</span></div>`;
+};
+
+// ── Salvar registro ────────────────────────────────────────────────────────
+window.salvarReg = async () => {
+  const rom = document.getElementById('f-rom').value.trim();
+  const mot = document.getElementById('f-mot').value.trim();
+  const dt  = document.getElementById('f-dt').value;
+  const err = document.getElementById('n-err');
+  const ok  = document.getElementById('n-ok');
+  err.classList.remove('show'); ok.classList.remove('show');
+  if(!rom){ err.innerHTML='<i class="ti ti-alert-circle"></i> Informe o romaneio.'; err.classList.add('show'); return; }
+  if(!mot){ err.innerHTML='<i class="ti ti-alert-circle"></i> Informe o motorista.'; err.classList.add('show'); return; }
+  if(!dt){  err.innerHTML='<i class="ti ti-alert-circle"></i> Informe a data e hora.'; err.classList.add('show'); return; }
+  if(uploadando>0){ err.innerHTML='<i class="ti ti-alert-circle"></i> Aguarde o envio das fotos.'; err.classList.add('show'); return; }
+  if(fotos.some(f=>f.uploading)){ err.innerHTML='<i class="ti ti-alert-circle"></i> Aguarde o envio das fotos.'; err.classList.add('show'); return; }
+
+  const btn = document.getElementById('btn-salvar');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Salvando…';
+
+  const regId = uid();
+  const urls   = fotos.map(f=>f.url).filter(Boolean);
+  const thumbs = fotos.map(f=>f.thumb||f.url).filter(Boolean);
+  const reg = { id:regId, romNum:rom, motNome:mot, dt, nfNums:nfList, fotos:urls, thumbs, em:new Date().toISOString() };
+
+  const d = ldb(); d.r.unshift(reg); lsave(d);
+
+  let cloud = false;
+  if(navigator.onLine){
+    try{
+      await Promise.race([
+        setDoc(doc(db,'registros',regId), {...reg, _sync:serverTimestamp()}),
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),20000))
+      ]);
+      cloud = true;
+    } catch(e){ console.warn('Firebase:', e.message); }
+  }
+
+  btn.disabled=false; btn.innerHTML='<i class="ti ti-check"></i> Salvar registro';
+  ok.innerHTML = cloud
+    ? `<i class="ti ti-cloud-check"></i> Salvo! (${urls.length} foto(s) no Cloudinary)`
+    : '<i class="ti ti-device-floppy"></i> Salvo localmente. Atualize quando tiver internet.';
+  ok.classList.add('show');
+  document.getElementById('f-rom').value='';
+  document.getElementById('f-mot').value='';
+  nfList=[]; renderNFTags();
+  document.getElementById('nf-review-area').style.display='none';
+  document.getElementById('nf-review-placeholder').style.display='block';
+  fotos=[]; renderFotos();
+  setTimeout(()=>ok.classList.remove('show'), 4000);
+};
+
+// ── Lista ──────────────────────────────────────────────────────────────────
+window.limparData = () => { document.getElementById('filtro-data').value=''; renderLista(); };
+
+window.renderLista = () => {
+  const d = ldb();
+  const busca = (document.getElementById('busca')?.value||'').toLowerCase().trim();
+  const dataF = document.getElementById('filtro-data')?.value||'';
+  const hoje  = new Date().toDateString();
+
+  document.getElementById('s-total').textContent = d.r.length;
+  document.getElementById('s-hoje').textContent  = d.r.filter(r=>new Date(r.dt).toDateString()===hoje).length;
+
+  const list = d.r.filter(r => {
+    const textoOk = !busca ||
+      (r.romNum+'').toLowerCase().includes(busca) ||
+      (r.motNome+'').toLowerCase().includes(busca) ||
+      (Array.isArray(r.nfNums) && r.nfNums.some(n => n.includes(busca)));
+    const dataOk  = !dataF  || isoDate(r.dt)===dataF;
+    return textoOk && dataOk;
+  });
+
+  const el = document.getElementById('lista-reg');
+  if(!list.length){
+    el.innerHTML=`<div class="empty"><i class="ti ti-inbox"></i>${(busca||dataF)?'Nenhum resultado.':'Nenhum registro ainda.'}</div>`;
+    return;
+  }
+
+  // Agrupa por data de finalização
+  const grupos = {};
+  list.forEach(r => {
+    const k = isoDate(r.dt)||'sem-data';
+    if(!grupos[k]) grupos[k]=[];
+    grupos[k].push(r);
+  });
+  const chaves = Object.keys(grupos).sort((a,b)=>b.localeCompare(a));
+
+  el.innerHTML = chaves.map(k => {
+    const label = k==='sem-data'
+      ? 'Sem data'
+      : new Date(k+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'});
+    const itens = grupos[k].map(r => {
+      const thumb = (r.thumbs&&r.thumbs[0]) || (r.fotos&&r.fotos[0]) || '';
+      const extra = (r.fotos&&r.fotos.length>1) ? `<span style="position:absolute;bottom:3px;right:3px;background:rgba(0,0,0,.65);color:#fff;font-size:10px;padding:1px 5px;border-radius:4px">+${r.fotos.length-1}</span>` : '';
+      return `
+        <div class="reg-item" onclick="abrirDetalhe('${r.id}')">
+          ${thumb
+            ? `<div style="position:relative;flex-shrink:0"><img src="${thumb}" class="thumb" loading="lazy" alt="">${extra}</div>`
+            : `<div class="thumb-ph"><i class="ti ti-file-text"></i></div>`}
+          <div class="reg-info">
+            <div class="t">${r.romNum}</div>
+            <div class="s">${r.motNome} · ${fmtDt(r.dt)}${r.nfNums&&r.nfNums.length?' · NFs: '+r.nfNums.slice(0,3).join(', ')+(r.nfNums.length>3?' …':''):''}</div>
+          </div>
+          <i class="ti ti-chevron-right" style="color:var(--muted);flex-shrink:0"></i>
+        </div>`;
+    }).join('');
+    return `<div class="grupo-wrap"><div class="grupo-label">${label} · ${grupos[k].length} entrega(s)</div><div class="reg-list">${itens}</div></div>`;
+  }).join('');
+};
+
+// ── Detalhe ────────────────────────────────────────────────────────────────
+let curId = null;
+window.abrirDetalhe = (id) => {
+  const d=ldb(); const r=d.r.find(x=>x.id===id); if(!r) return;
+  curId=id;
+  document.getElementById('m-titulo').textContent = r.romNum;
+  const fotos = Array.isArray(r.fotos)?r.fotos:[];
+  document.getElementById('m-corpo').innerHTML = `
+    <div class="modal-field"><div class="lbl">Motorista</div><div class="val">${r.motNome}</div></div>
+    <div class="modal-field"><div class="lbl">Notas Fiscais (${(r.nfNums||[]).length})</div><div class="val">${
+      r.nfNums&&r.nfNums.length
+        ? r.nfNums.map(n=>`<span style="display:inline-block;background:var(--accent-bg);color:var(--accent);border:.5px solid var(--accent);border-radius:20px;padding:3px 10px;font-size:13px;margin:2px">${n}</span>`).join('')
+        : '<span style="color:var(--muted)">Nenhuma NF cadastrada</span>'
+    }</div></div>
+    <div class="modal-field"><div class="lbl">Data finalização</div><div class="val">${fmtDt(r.dt)}</div></div>
+    <div class="modal-field"><div class="lbl">Arquivado em</div><div class="val">${fmtDt(r.em)}</div></div>
+    ${fotos.length
+      ? `<div class="modal-field"><div class="lbl">Fotos (${fotos.length})</div>
+          <div class="modal-gallery">${fotos.map((f,i)=>`<img src="${f}" loading="lazy" alt="foto ${i+1}" onclick="openLb('${f}')">`).join('')}</div>
+         </div>`
+      : `<div class="modal-field"><div class="lbl">Fotos</div><div class="val" style="color:var(--muted)">Nenhuma foto</div></div>`}`;
+  document.getElementById('m-actions').style.display = isAdmin()?'flex':'none';
+  document.getElementById('modal-bg').classList.add('open');
+};
+window.closeModal = () => { document.getElementById('modal-bg').classList.remove('open'); curId=null; };
+
+window.excluirReg = async () => {
+  if(!curId||!confirm('Excluir este registro? Não pode ser desfeito.')) return;
+  const d=ldb(); d.r=d.r.filter(r=>r.id!==curId); lsave(d);
+  if(navigator.onLine){ try{ await deleteDoc(doc(db,'registros',curId)); }catch(e){ console.warn(e); } }
+  closeModal(); renderLista();
+};
+
+// ── Edição ─────────────────────────────────────────────────────────────────
+let editFotos   = []; // { url, thumb, uploading, progress }
+let editUpload  = 0;
+
+window.abrirEdicao = () => {
+  const r = ldb().r.find(x=>x.id===curId); if(!r) return;
+  document.getElementById('e-rom').value = r.romNum;
+  document.getElementById('e-mot').value = r.motNome;
+  document.getElementById('e-dt').value  = r.dt?r.dt.slice(0,16):'';
+  nfListEdit = Array.isArray(r.nfNums)?[...r.nfNums]:[];
+  renderNFTagsEdit();
+  // Monta array de fotos existentes
+  const urls   = Array.isArray(r.fotos)?r.fotos:[];
+  const thumbs = Array.isArray(r.thumbs)?r.thumbs:[];
+  editFotos = urls.map((u,i)=>({ url:u, thumb:thumbs[i]||u, uploading:false, progress:100 }));
+  renderEditFotos();
+  document.getElementById('edit-err').classList.remove('show');
+  document.getElementById('modal-edit-bg').classList.add('open');
+};
+window.closeEdit = () => document.getElementById('modal-edit-bg').classList.remove('open');
+
+window.onFotosEdit = async (e) => {
+  const arqs = Array.from(e.target.files); e.target.value='';
+  if(!arqs.length) return;
+  const st = document.getElementById('edit-foto-status');
+  for(const file of arqs){
+    if(!navigator.onLine){ st.innerHTML='<i class="ti ti-alert-circle"></i> Sem internet.'; st.classList.add('show'); return; }
+    st.classList.remove('show');
+    const idx = editFotos.length;
+    editFotos.push({ url:null, thumb:null, uploading:true, progress:0 });
+    editUpload++;
+    renderEditFotos();
+    try{
+      const res = await uploadCloudinary(file, pct => { editFotos[idx].progress=pct; renderEditFotos(); });
+      editFotos[idx] = { url:res.url, thumb:res.thumb, uploading:false, progress:100 };
+    } catch(err){
+      editFotos.splice(idx,1);
+      st.innerHTML=`<i class="ti ti-alert-circle"></i> Erro: ${err.message}`; st.classList.add('show');
+    }
+    editUpload--;
+    renderEditFotos();
+  }
+};
+
+window.remEditFoto = (i) => { editFotos.splice(i,1); renderEditFotos(); };
+
+window.renderEditFotos = () => {
+  document.getElementById('edit-fotos-prev').innerHTML =
+    editFotos.map((f,i) =>
+      f.uploading
+        ? `<div class="edit-foto-item"><div style="width:100%;height:100%;background:var(--bg);border-radius:6px;border:.5px solid var(--border);display:flex;align-items:center;justify-content:center"><span class="spinner" style="color:var(--accent)"></span></div><div class="prog">${f.progress}%</div></div>`
+        : `<div class="edit-foto-item"><img src="${f.thumb||f.url}" loading="lazy"><button class="rm" onclick="remEditFoto(${i})">✕</button></div>`
+    ).join('') +
+    `<div class="edit-foto-add" onclick="document.getElementById('cam-edit').click()"><i class="ti ti-camera-plus"></i><span>Adicionar</span></div>`;
+};
+
+window.salvarEdicao = async () => {
+  const rom = document.getElementById('e-rom').value.trim();
+  const mot = document.getElementById('e-mot').value.trim();
+  const dt  = document.getElementById('e-dt').value;
+  const errEl = document.getElementById('edit-err');
+  errEl.classList.remove('show');
+  if(!rom){ errEl.innerHTML='<i class="ti ti-alert-circle"></i> Informe o romaneio.'; errEl.classList.add('show'); return; }
+  if(!mot){ errEl.innerHTML='<i class="ti ti-alert-circle"></i> Informe o motorista.'; errEl.classList.add('show'); return; }
+  if(!dt){  errEl.innerHTML='<i class="ti ti-alert-circle"></i> Informe a data e hora.'; errEl.classList.add('show'); return; }
+  if(editUpload>0||editFotos.some(f=>f.uploading)){ errEl.innerHTML='<i class="ti ti-alert-circle"></i> Aguarde o envio das fotos.'; errEl.classList.add('show'); return; }
+
+  const btn = document.getElementById('btn-salvar-edit');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Salvando…';
+
+  const d = ldb();
+  const idx = d.r.findIndex(x=>x.id===curId);
+  if(idx<0){ btn.disabled=false; btn.innerHTML='<i class="ti ti-check"></i> Salvar alterações'; return; }
+
+  const urls   = editFotos.map(f=>f.url).filter(Boolean);
+  const thumbs = editFotos.map(f=>f.thumb||f.url).filter(Boolean);
+  const reg = { ...d.r[idx], romNum:rom, motNome:mot, nfNums:nfListEdit, dt, fotos:urls, thumbs, em:new Date().toISOString() };
+  d.r[idx]=reg; lsave(d);
+
+  if(navigator.onLine){
+    try{
+      await Promise.race([
+        setDoc(doc(db,'registros',curId), {...reg, _sync:serverTimestamp()}),
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),20000))
+      ]);
+    } catch(e){ console.warn('Firebase:', e.message); }
+  }
+
+  btn.disabled=false; btn.innerHTML='<i class="ti ti-check"></i> Salvar alterações';
+  closeEdit();
+  abrirDetalhe(curId);
+  renderLista();
+};
+
+// ── Lightbox ───────────────────────────────────────────────────────────────
+window.openLb       = (src) => { document.getElementById('lb-img').src=src; document.getElementById('lightbox').classList.add('open'); };
+window.closeLightbox= ()    => document.getElementById('lightbox').classList.remove('open');
+
+// ── Painel admin ───────────────────────────────────────────────────────────
+function atualizarPainelAdmin(){
+  const p = document.getElementById('painel-admin');
+  if(p) p.style.display = isAdmin() ? 'block' : 'none';
+}
+
+// ── Reprocessar OCR em lote ────────────────────────────────────────────────
+window.reprocessarLote = async () => {
+  if(!confirm('Isso irá processar as fotos de todos os registros sem NFs cadastradas. Pode demorar alguns minutos. Continuar?')) return;
+  const btn  = document.getElementById('btn-ocr-lote');
+  const prog = document.getElementById('ocr-lote-prog');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Processando…';
+  prog.style.display = 'flex';
+
+  const d = ldb();
+  const semNF = d.r.filter(r => (!r.nfNums || r.nfNums.length === 0) && r.fotos && r.fotos.length > 0);
+
+  if(!semNF.length){
+    prog.innerHTML = '✓ Todos os registros já possuem NFs cadastradas.';
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-scan"></i> Iniciar leitura em lote';
+    return;
+  }
+
+  let extraidos = 0, semResultado = 0;
+  for(let i = 0; i < semNF.length; i++){
+    const r = semNF[i];
+    prog.innerHTML = `<span class="spinner" style="color:var(--accent);width:12px;height:12px;border-width:1.5px"></span>&nbsp;
+      Processando ${i+1} de ${semNF.length} — ${extraidos} extraídos, ${semResultado} sem resultado`;
+    try{
+      const nfs = await extrairNFs(r.fotos[0]);
+      const idx = d.r.findIndex(x => x.id === r.id);
+      if(idx >= 0){
+        d.r[idx].nfNums = nfs;
+        lsave(d);
+        if(nfs.length > 0){
+          extraidos++;
+          if(navigator.onLine){
+            try{ await setDoc(doc(db,'registros',r.id), {...d.r[idx], _sync:serverTimestamp()}); }
+            catch(e){ console.warn('Firebase lote:', e.message); }
+          }
+        } else { semResultado++; }
+      }
+    } catch(e){ semResultado++; }
+  }
+
+  prog.innerHTML = `✓ Concluído! ${extraidos} registros com NFs extraídas, ${semResultado} sem resultado (verifique manualmente na edição).`;
+  btn.disabled = false;
+  btn.innerHTML = '<i class="ti ti-scan"></i> Iniciar leitura em lote';
+  renderLista();
+};
+
+// ── Navegação ──────────────────────────────────────────────────────────────
+window.navTo = (page) => {
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.bottom-nav button').forEach(el=>el.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.getElementById('nav-'+page).classList.add('active');
+  if(page==='consultar'){ renderLista(); atualizarPainelAdmin(); }
+};
+
+// ── Init ───────────────────────────────────────────────────────────────────
+const now = new Date(); now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
+document.getElementById('f-dt').value = now.toISOString().slice(0,16);
+setAdmin(false); // Aplica estado inicial do ícone
+
+if(navigator.onLine){
+  setSyncBtn('syncing','Conectando…');
+  iniciarEscuta();
+} else {
+  setSyncBtn('err','Offline');
+}
+
+// VERSÃO DE TESTE: Service Worker desativado de propósito.
+// Registrar um SW aqui assumiria o controle do app em produção (mesmo escopo)
+// e impediria o rollback. O sw.js corrigido (sw_novo.js) só entra na promoção.
+</script>
+</body>
+</html>
