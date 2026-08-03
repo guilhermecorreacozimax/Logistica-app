@@ -183,7 +183,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
         </div>
         <div id="nf-tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
         <div style="display:flex;gap:6px">
-          <input type="text" id="nf-add-input" placeholder="Adicionar NF manualmente…"
+          <input type="text" id="nf-add-input" placeholder="Adicionar NF (6 dígitos, ex: 758723)"
             style="flex:1;padding:9px 12px;border:.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-size:14px;font-family:inherit"
             onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarNFManual()}">
           <button onclick="adicionarNFManual()" style="padding:9px 14px;background:var(--accent-bg);color:var(--accent);border:.5px solid var(--accent);border-radius:var(--radius-sm);font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap">
@@ -238,7 +238,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
       </div>
     </div>
     <div class="filters">
-      <input type="search" id="busca" placeholder="🔍 Romaneio, motorista ou Nº NF…" oninput="renderLista()">
+      <input type="search" id="busca" placeholder="🔍 Romaneio, motorista ou NF (ex: 758723)" oninput="renderLista()">
       <div class="filter-row">
         <input type="date" id="filtro-data" onchange="renderLista()">
         <button class="btn-clear" onclick="limparData()"><i class="ti ti-x"></i> Limpar</button>
@@ -297,7 +297,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
       <div style="font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">NFs da entrega</div>
       <div id="e-nf-tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
       <div style="display:flex;gap:6px">
-        <input type="text" id="e-nf-add-input" placeholder="Adicionar NF…"
+        <input type="text" id="e-nf-add-input" placeholder="Adicionar NF (ex: 758723)"
           style="flex:1;padding:9px 12px;border:.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-size:14px;font-family:inherit"
           onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarNFEdit()}">
         <button onclick="adicionarNFEdit()" style="padding:9px 14px;background:var(--accent-bg);color:var(--accent);border:.5px solid var(--accent);border-radius:var(--radius-sm);font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap">
@@ -354,26 +354,88 @@ async function getTesseract(){
   return tesseractWorker;
 }
 
+// ── Normalização de NF ─────────────────────────────────────────────────────
+// No canhoto o número vem impresso como "Nº 000.758.723", mas o que se usa é
+// apenas os 6 últimos dígitos (758723). Guardamos sempre essa forma canônica
+// e aceitamos qualquer jeito de digitar: 758.723, 758723 ou 000758723.
+function normNF(v){
+  const d = String(v||'').replace(/\D/g,'');
+  return d.length > 6 ? d.slice(-6) : d;
+}
+
+function carregarImg(url){
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => res(img);
+    img.onerror = rej;
+    img.src = url;
+  });
+}
+
+// Gira a imagem e aplica escala de cinza + contraste, que ajudam bastante
+// o Tesseract em foto de papel.
+function preparar(img, graus){
+  const g = ((graus % 360) + 360) % 360;
+  const trocaLados = (g === 90 || g === 270);
+  const lw = img.naturalWidth, lh = img.naturalHeight;
+  const cv = document.createElement('canvas');
+  cv.width  = trocaLados ? lh : lw;
+  cv.height = trocaLados ? lw : lh;
+  const cx = cv.getContext('2d');
+  cx.translate(cv.width/2, cv.height/2);
+  cx.rotate(g * Math.PI / 180);
+  cx.drawImage(img, -lw/2, -lh/2);
+  const d = cx.getImageData(0,0,cv.width,cv.height), p = d.data;
+  for(let i=0;i<p.length;i+=4){
+    let v = 0.299*p[i] + 0.587*p[i+1] + 0.114*p[i+2];
+    v = (v - 128) * 1.5 + 128;
+    p[i] = p[i+1] = p[i+2] = v < 0 ? 0 : v > 255 ? 255 : v;
+  }
+  cx.putImageData(d,0,0);
+  return cv;
+}
+
+// O número da NF tem formato próprio no canhoto: três grupos de três dígitos
+// separados por ponto. Nada mais no papel se parece com isso — o CNPJ é
+// XX.XXX.XXX/XXXX-XX, o valor tem vírgula (2.524,89) e a data usa barras.
+// Por isso procuramos o padrão em vez de depender da posição na foto.
+function acharNoTexto(txt){
+  const achados = [];
+  const t = txt.replace(/\s+/g,' ');
+  const rePonto = /(?<![\d.\/-])(\d{3})[.\s](\d{3})[.\s](\d{3})(?![\d.\/-])/g;
+  let m;
+  while((m = rePonto.exec(t)) !== null){
+    const n = normNF(m[1]+m[2]+m[3]);
+    if(n && !achados.includes(n)) achados.push(n);
+  }
+  // Reforço: número logo depois de "Nº"/"N." mesmo sem os pontos
+  const reRotulo = /n[ºo°.]{1,2}\s*([\d.\s]{7,13})/gi;
+  while((m = reRotulo.exec(t)) !== null){
+    const bruto = String(m[1]).replace(/\D/g,'');
+    if(bruto.length < 6 || bruto.length > 9) continue;
+    const n = normNF(bruto);
+    if(n.length === 6 && !achados.includes(n)) achados.push(n);
+  }
+  return achados;
+}
+
 async function extrairNFs(imageUrl){
   try {
     const w = await getTesseract();
-    const { data: { text } } = await w.recognize(imageUrl);
-    // Extrai números próximos a palavras-chave de NF
-    const linhas = text.split('\n');
-    const numeros = new Set();
-    const reNF  = /(?:nf|n\.f\.|nota|nota\s*fiscal|n[uú]m(?:ero)?|doc(?:umento)?|n[oº°])[^\d]{0,10}(\d{4,9})/gi;
-    const reBruto = /\b(\d{5,9})\b/g;
-    for(const linha of linhas){
-      let m;
-      // Primeiro: padrões com rótulo (mais confiável)
-      while((m = reNF.exec(linha)) !== null) numeros.add(m[1]);
+    await w.setParameters({ tessedit_char_whitelist: '0123456789.NºoSÉRIEnf-e ' });
+    const img = await carregarImg(imageUrl);
+    // Algumas fotos são tiradas de lado. Testamos as rotações em ordem de
+    // probabilidade e paramos assim que uma delas render resultado.
+    for(const graus of [0, 90, 270, 180]){
+      try {
+        const cv = preparar(img, graus);
+        const { data } = await w.recognize(cv);
+        const achados = acharNoTexto(data.text || '');
+        if(achados.length) return achados.slice(0, 40);
+      } catch(e){ /* tenta a próxima rotação */ }
     }
-    // Se não encontrou nada com rótulo, cai para números soltos de 5-9 dígitos
-    if(numeros.size === 0){
-      let m;
-      while((m = reBruto.exec(text)) !== null) numeros.add(m[1]);
-    }
-    return [...numeros].slice(0, 30); // limite razoável
+    return [];
   } catch(e){ console.warn('OCR erro:', e); return []; }
 }
 
@@ -382,7 +444,7 @@ let nfList = []; // array de strings
 
 window.adicionarNFManual = () => {
   const inp = document.getElementById('nf-add-input');
-  const val = inp.value.trim().replace(/\D/g,'');
+  const val = normNF(inp.value);
   if(val && !nfList.includes(val)){ nfList.push(val); renderNFTags(); }
   inp.value = '';
 };
@@ -414,7 +476,7 @@ let nfListEdit = [];
 
 window.adicionarNFEdit = () => {
   const inp = document.getElementById('e-nf-add-input');
-  const val = inp.value.trim().replace(/\D/g,'');
+  const val = normNF(inp.value);
   if(val && !nfListEdit.includes(val)){ nfListEdit.push(val); renderNFTagsEdit(); }
   inp.value = '';
 };
@@ -566,7 +628,7 @@ function iniciarEscuta(){
         id:      r.id||ds.id,
         romNum:  r.romNum||'',
         motNome: r.motNome||'',
-        nfNums:  Array.isArray(r.nfNums)?r.nfNums:[],
+        nfNums:  Array.isArray(r.nfNums) ? r.nfNums.map(normNF).filter(Boolean) : [],
         dt:      r.dt||'',
         em:      r.em||'',
         fotos:   Array.isArray(r.fotos)?r.fotos:[],
@@ -722,7 +784,11 @@ window.renderLista = () => {
     const textoOk = !busca ||
       (r.romNum+'').toLowerCase().includes(busca) ||
       (r.motNome+'').toLowerCase().includes(busca) ||
-      (Array.isArray(r.nfNums) && r.nfNums.some(n => n.includes(busca)));
+      (Array.isArray(r.nfNums) && (() => {
+        const q = normNF(busca);
+        if(!q) return false;
+        return r.nfNums.some(n => normNF(n).includes(q));
+      })());
     const dataOk  = !dataF  || isoDate(r.dt)===dataF;
     return textoOk && dataOk;
   });
@@ -970,9 +1036,20 @@ if(navigator.onLine){
   setSyncBtn('err','Offline');
 }
 
-// VERSÃO DE TESTE: Service Worker desativado de propósito.
-// Registrar um SW aqui assumiria o controle do app em produção (mesmo escopo)
-// e impediria o rollback. O sw.js corrigido (sw_novo.js) só entra na promoção.
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    // Procura nova versão a cada carga e quando a aba volta ao foco
+    reg.update();
+    document.addEventListener('visibilitychange', () => { if(!document.hidden) reg.update(); });
+    // Quando um SW novo assume, recarrega uma única vez para servir a versão nova
+    let recarregou = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if(recarregou) return;
+      recarregou = true;
+      location.reload();
+    });
+  }).catch(()=>{});
+}
 </script>
 </body>
 </html>
