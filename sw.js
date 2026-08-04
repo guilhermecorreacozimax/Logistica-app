@@ -1,4 +1,4 @@
-const CACHE = 'canhotos-v7';
+const CACHE = 'canhotos-v8';
 
 // Só o essencial é obrigatório. CDNs são "best effort".
 const ESSENCIAL = ['./', './index.html'];

@@ -179,9 +179,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
       </div>
       <div id="nf-review-area" style="display:none;margin-bottom:1rem">
         <div style="font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">
-          NFs identificadas pelo OCR — revise antes de salvar
+          NFs da entrega — leia da foto ou digite
         </div>
         <div id="nf-tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+          <button onclick="lerNFsAgora()" id="btn-ler-nf"
+            style="flex:1;padding:10px;background:var(--accent-bg);color:var(--accent);border:.5px solid var(--accent);border-radius:var(--radius-sm);font-size:13px;cursor:pointer;font-family:inherit">
+            <i class="ti ti-scan"></i> Ler NFs da foto
+          </button>
+        </div>
         <div style="display:flex;gap:6px">
           <input type="text" id="nf-add-input" placeholder="Adicionar NF (6 dígitos, ex: 758723)"
             style="flex:1;padding:9px 12px;border:.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-size:14px;font-family:inherit"
@@ -197,7 +203,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
       <div id="nf-review-placeholder" style="margin-bottom:1rem">
         <div style="font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">NFs da entrega</div>
         <div style="font-size:13px;color:var(--muted);padding:10px 13px;border:.5px dashed var(--border-md);border-radius:var(--radius-sm);background:var(--bg)">
-          <i class="ti ti-scan" style="margin-right:4px"></i>Adicione uma foto para extrair as NFs automaticamente
+          <i class="ti ti-scan" style="margin-right:4px"></i>Adicione uma foto para poder ler as NFs
         </div>
       </div>
       <div>
@@ -439,6 +445,51 @@ async function extrairNFs(imageUrl){
   } catch(e){ console.warn('OCR erro:', e); return []; }
 }
 
+// Mostra a área de NFs assim que existe foto, sem rodar OCR
+function mostrarAreaNF(){
+  const area = document.getElementById('nf-review-area');
+  const ph   = document.getElementById('nf-review-placeholder');
+  if(area) area.style.display = 'block';
+  if(ph)   ph.style.display   = 'none';
+  renderNFTags();
+}
+
+// Leitura sob demanda: só roda quando o usuário clica.
+window.lerNFsAgora = async () => {
+  const prontas = fotos.filter(f => f.url && !f.uploading);
+  if(!prontas.length){ alert('Adicione uma foto antes de ler as NFs.'); return; }
+
+  const btn   = document.getElementById('btn-ler-nf');
+  const ocrSt = document.getElementById('ocr-status');
+  const antes = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="width:12px;height:12px;border-width:1.5px"></span> Lendo…';
+  if(ocrSt) ocrSt.style.display = 'flex';
+
+  try {
+    const achados = await extrairNFs(prontas[0].url);
+    const novas = achados.filter(n => !nfList.includes(n));
+
+    if(!achados.length){
+      alert('Nenhuma NF foi lida nesta foto. Adicione manualmente no campo abaixo.');
+    } else if(!novas.length){
+      alert('As NFs lidas já estavam na lista.');
+    } else if(nfList.length && !confirm(
+        `Leitura encontrou: ${novas.join(', ')}\n\nAcrescentar às ${nfList.length} NF(s) já cadastradas?`)){
+      // usuário recusou: nada é alterado
+    } else {
+      novas.forEach(n => nfList.push(n));
+      renderNFTags();
+    }
+  } catch(e){
+    alert('Falha ao ler a foto: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = antes;
+    if(ocrSt) ocrSt.style.display = 'none';
+  }
+};
+
 // ── NF tags — novo registro ────────────────────────────────────────────────
 let nfList = []; // array de strings
 
@@ -457,7 +508,7 @@ window.removerNF = (nf) => {
 function renderNFTags(){
   const area = document.getElementById('nf-review-area');
   const ph   = document.getElementById('nf-review-placeholder');
-  if(nfList.length > 0 || document.getElementById('ocr-status').style.display !== 'none'){
+  if(nfList.length){
     area.style.display = 'block';
     ph.style.display   = 'none';
   }
@@ -684,19 +735,9 @@ window.onFotos = async (e) => {
         fotos[idx].progress = pct; renderFotos();
       });
       fotos[idx] = { url:res.url, thumb:res.thumb, uploading:false, progress:100 };
-      // OCR na primeira foto
-      if(idx === 0){
-        const ocrSt = document.getElementById('ocr-status');
-        const area  = document.getElementById('nf-review-area');
-        const ph    = document.getElementById('nf-review-placeholder');
-        ocrSt.style.display = 'flex';
-        area.style.display  = 'block';
-        ph.style.display    = 'none';
-        const nfs = await extrairNFs(res.url);
-        ocrSt.style.display = 'none';
-        nfs.forEach(n => { if(!nfList.includes(n)) nfList.push(n); });
-        renderNFTags();
-      }
+      // OCR não roda mais aqui: era isso que segurava o salvamento.
+      // Agora só quando o usuário pedir, pelo botão "Ler NFs da foto".
+      if(idx === 0) mostrarAreaNF();
     } catch(err){
       fotos.splice(idx,1);
       st.innerHTML=`<i class="ti ti-alert-circle"></i> Erro no upload: ${err.message}`;
