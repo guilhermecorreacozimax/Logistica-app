@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Canhotos — prévia das próximas telas</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+
+:root{
+  --bg:#f5f5f3;--surface:#fff;--border:rgba(0,0,0,.09);--border-md:rgba(0,0,0,.16);
+  --text:#1a1a18;--muted:#6b6b67;--accent:#1a4fcf;--accent-bg:#eef2fd;
+  --success:#1a7a45;--success-bg:#eaf6ef;--danger:#b02020;--danger-bg:#fdf0f0;
+  --warning:#7a5500;--warning-bg:#fef8e7;
+  --radius:12px;--radius-sm:8px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#141412;--surface:#1e1e1c;--border:rgba(255,255,255,.09);--border-md:rgba(255,255,255,.16);
+  --text:#f0f0ec;--muted:#9a9a94;--accent:#6a9aff;--accent-bg:#1a2540;
+  --success:#4cad75;--success-bg:#0f2a1c;--danger:#e06060;--danger-bg:#2a0f0f;
+  --warning:#d4aa30;--warning-bg:#231e08;
+}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:72px}
+.topbar{background:var(--surface);border-bottom:.5px solid var(--border);padding:0 1rem;display:flex;align-items:center;justify-content:space-between;height:54px;position:sticky;top:0;z-index:50}
+.topbar-title{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:600}
+.topbar-title i{color:var(--accent);font-size:20px}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.admin-badge{font-size:11px;background:var(--accent-bg);color:var(--accent);padding:3px 8px;border-radius:20px;font-weight:600;display:none}
+.admin-badge.show{display:block}
+.btn-icon{background:none;border:.5px solid var(--border-md);border-radius:var(--radius-sm);color:var(--muted);width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+.sync-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;border:.5px solid var(--border-md);border-radius:var(--radius-sm);background:transparent;color:var(--text);font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.sync-btn:disabled{opacity:.5;cursor:not-allowed}
+.sync-btn.ok{color:var(--success);border-color:var(--success)}
+.sync-btn.err{color:var(--danger);border-color:var(--danger)}
+.sync-btn.syncing{color:var(--accent);border-color:var(--accent)}
+.offline-bar{background:var(--warning-bg);color:var(--warning);font-size:13px;text-align:center;padding:7px;display:none}
+.offline-bar.show{display:block}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:.5px solid var(--border);display:flex;z-index:50;padding-bottom:env(safe-area-inset-bottom)}
+.bottom-nav button{flex:1;background:none;border:none;padding:10px 0 8px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:var(--muted);cursor:pointer;font-family:inherit}
+.bottom-nav button i{font-size:22px}
+.bottom-nav button.active{color:var(--accent);font-weight:500}
+.page{display:none}.page.active{display:block}
+.container{max-width:600px;margin:0 auto;padding:1.25rem 1rem}
+.card{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem}
+.card h2{font-size:15px;font-weight:600;margin-bottom:1.1rem;display:flex;align-items:center;gap:7px}
+.card h2 i{color:var(--accent)}
+.field{margin-bottom:1rem}
+.field label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
+.field input{width:100%;padding:11px 13px;border:.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-size:15px;font-family:inherit}
+.field input:focus{outline:none;border-color:var(--accent);background:var(--surface)}
+.field input::placeholder{color:var(--muted);opacity:.7}
+.foto-label{display:block;font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+.foto-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin-top:4px}
+.foto-item{position:relative;aspect-ratio:4/3}
+.foto-item img{width:100%;height:100%;object-fit:cover;border-radius:var(--radius-sm);border:.5px solid var(--border);display:block;cursor:pointer}
+.foto-item .rm{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.65);color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.foto-item .prog{position:absolute;inset:0;background:rgba(0,0,0,.5);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:600}
+.foto-add{aspect-ratio:4/3;border:1.5px dashed var(--border-md);border-radius:var(--radius-sm);background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;color:var(--muted);font-size:11px}
+.foto-add i{font-size:24px}
+#cam-in,#cam-edit{display:none}
+.btn-save{width:100%;padding:13px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:1.1rem}
+.btn-save:disabled{opacity:.5;cursor:not-allowed}
+.alert{padding:10px 13px;border-radius:var(--radius-sm);font-size:13px;margin-top:10px;display:none;align-items:center;gap:7px}
+.alert.show{display:flex}
+.alert-success{background:var(--success-bg);color:var(--success)}
+.alert-danger{background:var(--danger-bg);color:var(--danger)}
+.alert-info{background:var(--accent-bg);color:var(--accent)}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem}
+.stat{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius);padding:12px 8px;text-align:center}
+.stat .n{font-size:22px;font-weight:700;color:var(--accent)}
+.stat .l{font-size:11px;color:var(--muted);margin-top:1px}
+.filters{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:1rem;display:flex;flex-direction:column;gap:8px}
+.filters input{width:100%;padding:10px 13px;border:.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-size:14px;font-family:inherit}
+.filters input:focus{outline:none;border-color:var(--accent)}
+.filter-row{display:flex;gap:8px}
+.filter-row input[type=date]{flex:1}
+.btn-clear{background:none;border:.5px solid var(--border-md);border-radius:var(--radius-sm);color:var(--muted);padding:10px 12px;cursor:pointer;font-size:13px;white-space:nowrap;font-family:inherit}
+.btn-clear:hover{color:var(--danger);border-color:var(--danger)}
+.reg-list{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.reg-item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:.5px solid var(--border);cursor:pointer}
+.reg-item:last-child{border-bottom:none}
+.reg-item:hover{background:var(--bg)}
+.thumb{width:56px;height:42px;object-fit:cover;border-radius:6px;border:.5px solid var(--border);flex-shrink:0}
+.thumb-ph{width:56px;height:42px;border-radius:6px;border:.5px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--muted);font-size:18px}
+.reg-info{flex:1;min-width:0}
+.reg-info .t{font-weight:500;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.reg-info .s{font-size:12px;color:var(--muted);margin-top:1px}
+.empty{text-align:center;padding:2.5rem 1rem;color:var(--muted)}
+.empty i{font-size:36px;display:block;margin-bottom:10px;opacity:.4}
+.grupo-label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:0 2px;margin-bottom:6px}
+.grupo-wrap{margin-bottom:1rem}
+/* Modais */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius) var(--radius) 0 0;padding:1.5rem;width:100%;max-width:600px;max-height:88vh;overflow-y:auto;padding-bottom:calc(1.5rem + env(safe-area-inset-bottom))}
+.modal-handle{width:40px;height:4px;background:var(--border-md);border-radius:2px;margin:0 auto 1.2rem}
+.modal-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem}
+.modal-head h3{font-size:17px;font-weight:600}
+.modal-close{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer}
+.modal-field{margin-bottom:.75rem}
+.modal-field .lbl{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:2px}
+.modal-field .val{font-size:14px}
+.modal-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:.5rem}
+.modal-gallery img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:var(--radius-sm);border:.5px solid var(--border);cursor:pointer}
+.modal-actions{display:flex;gap:8px;margin-top:1.25rem}
+.btn-edit{flex:1;padding:11px;background:var(--accent-bg);color:var(--accent);border:.5px solid var(--accent);border-radius:var(--radius-sm);font-size:14px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-del{flex:1;padding:11px;background:var(--danger-bg);color:var(--danger);border:.5px solid var(--danger);border-radius:var(--radius-sm);font-size:14px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px}
+.modal-edit-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:flex-end;justify-content:center}
+.modal-edit-bg.open{display:flex}
+.modal-edit{background:var(--surface);border-radius:var(--radius) var(--radius) 0 0;padding:1.5rem;width:100%;max-width:600px;max-height:92vh;overflow-y:auto;padding-bottom:calc(1.5rem + env(safe-area-inset-bottom))}
+/* PIN */
+.pin-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;align-items:center;justify-content:center}
+.pin-bg.open{display:flex}
+.pin-box{background:var(--surface);border-radius:var(--radius);padding:2rem 1.5rem;width:280px;text-align:center}
+.pin-box h3{font-size:16px;font-weight:600;margin-bottom:.4rem}
+.pin-box p{font-size:13px;color:var(--muted);margin-bottom:1.2rem}
+.pin-input{width:100%;padding:12px;border:.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-size:22px;letter-spacing:8px;text-align:center;font-family:inherit}
+.pin-input:focus{outline:none;border-color:var(--accent)}
+.pin-err{font-size:12px;color:var(--danger);margin-top:8px;min-height:16px}
+.pin-actions{display:flex;gap:8px;margin-top:1rem}
+.pin-btn{flex:1;padding:11px;border-radius:var(--radius-sm);font-size:14px;cursor:pointer;font-family:inherit;font-weight:500}
+.pin-cancel{background:var(--bg);border:.5px solid var(--border-md);color:var(--text)}
+.pin-ok{background:var(--accent);border:none;color:#fff}
+/* Edit fotos */
+.edit-foto-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px;margin-top:4px}
+.edit-foto-item{position:relative;aspect-ratio:4/3}
+.edit-foto-item img{width:100%;height:100%;object-fit:cover;border-radius:6px;border:.5px solid var(--border);display:block}
+.edit-foto-item .rm{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.65);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.edit-foto-item .prog{position:absolute;inset:0;background:rgba(0,0,0,.5);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600}
+.edit-foto-add{aspect-ratio:4/3;border:1.5px dashed var(--border-md);border-radius:6px;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:var(--muted);font-size:10px}
+.edit-foto-add i{font-size:20px}
+/* Lightbox */
+.lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:500;align-items:center;justify-content:center}
+.lightbox.open{display:flex}
+.lightbox img{max-width:100%;max-height:100vh;object-fit:contain}
+.lb-close{position:fixed;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+
+/* ── Adições exclusivas do preview ─────────────────────────── */
+.pv-nota{max-width:600px;margin:0 auto;padding:10px 1rem 0;font-size:12px;color:var(--muted);line-height:1.5}
+.pv-nota b{color:var(--warning)}
+.pv-banner{background:var(--warning-bg);color:var(--warning);font-size:12.5px;padding:9px 1rem;text-align:center;line-height:1.45}
+
+/* Seletor de tipo de foto — fica fixo até salvar */
+.tipo-sel{display:flex;gap:0;border:.5px solid var(--border-md);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:9px}
+.tipo-sel button{flex:1;padding:9px 8px;background:var(--bg);border:none;color:var(--muted);font-size:13px;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.tipo-sel button.on{background:var(--accent);color:#fff;font-weight:600}
+.tipo-hint{font-size:11.5px;color:var(--muted);margin-bottom:9px;line-height:1.45}
+
+/* Etiqueta de tipo sobre a miniatura */
+.badge{position:absolute;bottom:4px;left:4px;font-size:9.5px;font-weight:700;letter-spacing:.03em;padding:2px 6px;border-radius:20px;text-transform:uppercase}
+.b-can{background:var(--accent);color:#fff}
+.b-ass{background:#6d3fc4;color:#fff}
+.b-nid{background:var(--warning);color:#1a1a18}
+
+.res{border:.5px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-top:10px;background:var(--bg)}
+.res-h{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:5px;background:var(--accent-bg);color:var(--accent);border:.5px solid var(--accent);border-radius:20px;padding:4px 10px;font-size:13px;font-weight:500;margin:2px}
+.chip button{background:none;border:none;color:inherit;cursor:pointer;font-size:14px;line-height:1;padding:0}
+.chip.falta{background:var(--warning-bg);color:var(--warning);border-color:var(--warning);border-style:dashed}
+.aviso{background:var(--warning-bg);color:var(--warning);border-radius:var(--radius-sm);padding:9px 11px;font-size:12.5px;margin-top:9px;display:flex;gap:7px;line-height:1.45}
+.aviso i{margin-top:1px}
+
+.lin{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:.5px solid var(--border);font-size:13.5px}
+.lin:last-child{border-bottom:none}
+.lin .k{color:var(--muted)}
+.tag-sim{background:var(--success-bg);color:var(--success);padding:3px 9px;border-radius:20px;font-size:12px;font-weight:600}
+.tag-nao{background:var(--danger-bg);color:var(--danger);padding:3px 9px;border-radius:20px;font-size:12px;font-weight:600}
+.tag-tal{background:var(--warning-bg);color:var(--warning);padding:3px 9px;border-radius:20px;font-size:12px;font-weight:600}
+
+.mini{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.mini .cel{position:relative;aspect-ratio:4/3;border-radius:var(--radius-sm);border:.5px solid var(--border);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted);text-align:center;padding:4px;line-height:1.3}
+.papel{background:repeating-linear-gradient(0deg,#fbfbf9,#fbfbf9 5px,#f0f0ec 5px,#f0f0ec 6px)}
+@media(prefers-color-scheme:dark){.papel{background:repeating-linear-gradient(0deg,#2a2a27,#2a2a27 5px,#232320 5px,#232320 6px)}}
+.sel-tipo-mini{width:100%;padding:5px;margin-top:4px;border:.5px solid var(--border-md);border-radius:6px;background:var(--bg);color:var(--text);font-size:11.5px;font-family:inherit}
+
+</style>
+</head>
+<body>
+
+<div class="pv-banner">
+  <b>Prévia</b> — dados fictícios, sem Firebase e sem Cloudinary. Serve só para você ver o desenho.
+</div>
+
+<div class="topbar">
+  <div class="topbar-title"><i class="ti ti-file-invoice"></i> Canhotos</div>
+  <div class="topbar-right">
+    <span class="admin-badge show">ADMIN</span>
+    <button class="btn-icon"><i class="ti ti-lock-open"></i></button>
+  </div>
+</div>
+
+<!-- ══ TELA 1 — NOVO REGISTRO ══ -->
+<div class="page active" id="p-novo">
+  <div class="container">
+
+    <div class="pv-nota">Tela 1 de 3 — <b>Novo registro</b>: seletor de tipo e leitura sob demanda.</div>
+
+    <div class="card">
+      <h2><i class="ti ti-plus"></i> Novo registro</h2>
+
+      <div class="field"><label>Romaneio</label><input value="ROM-0842" readonly></div>
+      <div class="field"><label>Motorista</label><input value="Rodrigo Pereira" readonly></div>
+
+      <span class="foto-label">Fotos</span>
+
+      <div class="tipo-sel">
+        <button class="on" onclick="setTipo(this,'can')"><i class="ti ti-receipt"></i> Canhoto</button>
+        <button onclick="setTipo(this,'ass')"><i class="ti ti-tool"></i> Assistência</button>
+      </div>
+      <div class="tipo-hint" id="hint">Fotografe os canhotos, depois troque para Assistência. A escolha vale para as próximas fotos até você salvar.</div>
+
+      <div class="foto-grid">
+        <div class="foto-item"><div class="cel papel" style="width:100%;height:100%;border-radius:var(--radius-sm);border:.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted)">folha 1</div><span class="badge b-can">canhoto</span></div>
+        <div class="foto-item"><div class="cel papel" style="width:100%;height:100%;border-radius:var(--radius-sm);border:.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted)">folha 2</div><span class="badge b-can">canhoto</span></div>
+        <div class="foto-item"><div class="cel papel" style="width:100%;height:100%;border-radius:var(--radius-sm);border:.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted)">guia</div><span class="badge b-ass">assist.</span></div>
+        <div class="foto-add"><i class="ti ti-camera-plus"></i><span>Adicionar</span></div>
+      </div>
+
+      <button class="btn-edit" style="width:100%;margin-top:14px" onclick="lerNF()"><i class="ti ti-scan"></i> Ler NFs das fotos</button>
+
+      <div class="res" id="res-nf" style="display:none">
+        <div class="res-h"><i class="ti ti-list-check"></i> 13 NFs lidas em 2 folhas</div>
+        <div>
+          <span class="chip">763525 <button>&times;</button></span>
+          <span class="chip">763526 <button>&times;</button></span>
+          <span class="chip">763527 <button>&times;</button></span>
+          <span class="chip">763528 <button>&times;</button></span>
+          <span class="chip">763529 <button>&times;</button></span>
+          <span class="chip">763530 <button>&times;</button></span>
+          <span class="chip falta">763531 ?</span>
+          <span class="chip">763532 <button>&times;</button></span>
+          <span class="chip">763533 <button>&times;</button></span>
+        </div>
+        <div class="aviso">
+          <i class="ti ti-alert-triangle"></i>
+          <span>Salto na sequência: <b>763531</b> não foi lido, mas está entre dois que foram. Confira no papel e adicione se existir.</span>
+        </div>
+        <div class="tipo-hint" style="margin:9px 0 0">A guia de assistência foi ignorada nesta leitura.</div>
+      </div>
+
+      <div class="field" style="margin-top:12px">
+        <label>Adicionar NF manualmente</label>
+        <input placeholder="6 dígitos, ex: 763531">
+      </div>
+
+      <button class="btn-save"><i class="ti ti-check"></i> Salvar registro</button>
+    </div>
+
+    <button class="btn-clear" style="width:100%" onclick="irPara('p-assist')">Ver próxima tela &rarr;</button>
+  </div>
+</div>
+
+<!-- ══ TELA 2 — ASSISTÊNCIA ══ -->
+<div class="page" id="p-assist">
+  <div class="container">
+    <div class="pv-nota">Tela 2 de 3 — <b>Leitura da guia de assistência</b>.</div>
+
+    <div class="card">
+      <h2><i class="ti ti-tool"></i> Assistências do registro</h2>
+
+      <div class="res" style="margin-top:0">
+        <div class="res-h"><i class="ti ti-file-text"></i> Guia 1</div>
+        <div class="lin"><span class="k">Número</span><b>145927</b></div>
+        <div class="lin"><span class="k">Marcação a caneta</span><span class="tag-sim">SIM</span></div>
+        <div class="lin"><span class="k">Onde</span><span>No campo de assinatura</span></div>
+      </div>
+
+      <div class="res">
+        <div class="res-h"><i class="ti ti-file-text"></i> Guia 2</div>
+        <div class="lin"><span class="k">Número</span><b>145931</b></div>
+        <div class="lin"><span class="k">Marcação a caneta</span><span class="tag-sim">SIM</span></div>
+        <div class="lin"><span class="k">Onde</span><span>Fora do campo, no rodapé</span></div>
+        <div class="aviso"><i class="ti ti-info-circle"></i><span>Tem escrita, mas não no campo de assinatura.</span></div>
+      </div>
+
+      <div class="res">
+        <div class="res-h"><i class="ti ti-file-text"></i> Guia 3</div>
+        <div class="lin"><span class="k">Número</span><b>145944</b></div>
+        <div class="lin"><span class="k">Marcação a caneta</span><span class="tag-nao">NÃO</span></div>
+        <div class="aviso"><i class="ti ti-alert-triangle"></i><span>Nenhuma marcação colorida encontrada. Confira no papel — caneta preta não é detectada por este método.</span></div>
+      </div>
+
+      <div class="res">
+        <div class="res-h"><i class="ti ti-file-text"></i> Guia 4</div>
+        <div class="lin"><span class="k">Número</span><span style="color:var(--muted)">não lido</span></div>
+        <div class="lin"><span class="k">Marcação a caneta</span><span class="tag-tal">INCERTO</span></div>
+        <div class="aviso"><i class="ti ti-help-circle"></i><span>Foto muito escura. Preencha na mão.</span></div>
+      </div>
+    </div>
+
+    <button class="btn-clear" style="width:100%" onclick="irPara('p-acervo')">Ver próxima tela &rarr;</button>
+  </div>
+</div>
+
+<!-- ══ TELA 3 — ACERVO ANTIGO ══ -->
+<div class="page" id="p-acervo">
+  <div class="container">
+    <div class="pv-nota">Tela 3 de 3 — <b>Acervo antigo</b>: classificação e correção manual.</div>
+
+    <div class="card" style="border-color:var(--accent)">
+      <h2><i class="ti ti-wand"></i> Classificar acervo</h2>
+      <div class="lin"><span class="k">Registros até 19/07</span><span class="tag-sim">só canhotos</span></div>
+      <div class="lin"><span class="k">De 20/07 em diante</span><span>28 a conferir</span></div>
+      <div class="tipo-hint" style="margin:10px 0 0">Antes de 20/07 não havia assistências, então esses registros são marcados direto, sem leitura.</div>
+      <button class="btn-save" style="margin-top:12px"><i class="ti ti-scan"></i> Classificar os 28 restantes</button>
+    </div>
+
+    <div class="card">
+      <h2><i class="ti ti-photo"></i> Fotos de ROM-0791</h2>
+      <div class="mini">
+        <div><div class="cel papel">folha</div>
+          <select class="sel-tipo-mini"><option>Canhoto</option><option>Assistência</option><option>Não identificado</option></select></div>
+        <div><div class="cel papel">folha</div>
+          <select class="sel-tipo-mini"><option>Canhoto</option><option>Assistência</option><option>Não identificado</option></select></div>
+        <div><div class="cel papel">guia</div>
+          <select class="sel-tipo-mini"><option>Assistência</option><option>Canhoto</option><option>Não identificado</option></select></div>
+        <div><div class="cel papel" style="border-color:var(--warning)">escura</div>
+          <select class="sel-tipo-mini" style="border-color:var(--warning)"><option>Não identificado</option><option>Canhoto</option><option>Assistência</option></select></div>
+      </div>
+      <div class="tipo-hint" style="margin-top:10px">Quando o app não tem certeza, marca como <b>Não identificado</b> em vez de chutar. Você corrige aqui.</div>
+    </div>
+
+    <button class="btn-clear" style="width:100%" onclick="irPara('p-novo')">&larr; Voltar ao início</button>
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <button class="active" onclick="irPara('p-novo')"><i class="ti ti-plus"></i>Novo</button>
+  <button onclick="irPara('p-assist')"><i class="ti ti-tool"></i>Assistências</button>
+  <button onclick="irPara('p-acervo')"><i class="ti ti-archive"></i>Acervo</button>
+</div>
+
+<script>
+function irPara(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const i = ['p-novo','p-assist','p-acervo'].indexOf(id);
+  document.querySelectorAll('.bottom-nav button').forEach((b,n)=>b.classList.toggle('active',n===i));
+  window.scrollTo(0,0);
+}
+function setTipo(btn,t){
+  document.querySelectorAll('.tipo-sel button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('hint').textContent = t==='can'
+    ? 'Fotografe os canhotos, depois troque para Assistência. A escolha vale para as próximas fotos até você salvar.'
+    : 'As próximas fotos entram como assistência. O leitor de NF vai ignorá-las.';
+}
+function lerNF(){ document.getElementById('res-nf').style.display='block'; }
+</script>
+</body>
+</html>
