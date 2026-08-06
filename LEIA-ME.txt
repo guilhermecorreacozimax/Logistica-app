@@ -1,0 +1,82 @@
+CANHOTOS v16 — LEITURA POR ROMANEIO E TIPO DE FOTO
+==================================================
+
+Implementa os itens combinados no checklist.
+
+
+1. LEITURA LÊ TODAS AS FOTOS (era a maior causa dos gaps)
+---------------------------------------------------------
+A v15 lia apenas a PRIMEIRA foto do registro. Se o romaneio tinha três
+folhas de canhotos, duas ficavam de fora inteiras. Agora percorre todas.
+
+Só lê as fotos marcadas como canhoto. Como reforço, confere o texto:
+- Canhoto tem "RECEBEMOS DE"
+- Assistência tem "ORDEM DE ASSISTÊNCIA TÉCNICA"
+Atenção: "COZIMAX" aparece nos DOIS documentos, por isso não serve de âncora.
+
+
+2. AVISO DE SALTO NA SEQUÊNCIA
+------------------------------
+As NFs de uma folha são sequenciais. Se ler 763525, 763526 e 763528, o app
+aponta que 763527 provavelmente existe e não foi lido.
+
+As sugeridas entram na lista marcadas com "?" e em amarelo tracejado, para
+você confirmar no papel ou remover. Elas NÃO foram lidas de fato.
+
+Só sugere lacunas de até 5 números, para não inventar sequência inteira.
+
+
+3. TIPO DE FOTO: CANHOTO OU ASSISTÊNCIA
+---------------------------------------
+No cadastro há um seletor acima do botão de adicionar foto. A escolha vale
+para as próximas fotos até você salvar — fotografe os canhotos, troque para
+Assistência, fotografe o resto.
+
+Cada miniatura mostra uma etiqueta com o tipo. No formulário de edição, o
+admin pode corrigir o tipo de cada foto individualmente.
+
+
+4. BOTÃO DE LEITURA DENTRO DO ROMANEIO
+--------------------------------------
+No formulário de edição, restrito a admin. Lê as fotos de canhoto daquele
+registro, mostra progresso ("Lendo foto 2 de 4…"), e nunca substitui as NFs
+existentes — pergunta antes de acrescentar.
+
+
+5. CLASSIFICAR ACERVO (admin › Consultar)
+-----------------------------------------
+Marca o tipo das fotos dos registros antigos:
+- Finalização ANTERIOR a 20/07/2026 -> canhoto direto, sem leitura
+- De 20/07 em diante -> "não identificado", para você conferir na edição
+
+IMPORTANTE: rode UMA VEZ, ANTES de reabrir romaneios antigos para
+acrescentar assistências. Se rodar depois, as guias que você acrescentou
+seriam marcadas como canhoto.
+
+
+6. CONSULTA
+-----------
+- Registros sem NF aparecem com etiqueta "sem NF" na lista
+- Caixa "Mostrar somente registros sem NF" para atacar o acervo aos poucos
+
+
+FORA DESTA VERSÃO
+-----------------
+Leitura do número da assistência e detecção de marcação a caneta. Ficou
+pendente porque os clientes assinam com várias cores, inclusive preta:
+caneta colorida é detectável em qualquer ponto da folha, mas caneta preta
+só na faixa do campo de assinatura, e preta escrita em outro canto não é
+distinguível de texto impresso.
+
+
+ATUALIZAÇÕES FUTURAS — NÃO ESQUEÇA
+----------------------------------
+Ao editar o index.html, incremente o cache no sw.js:
+    const CACHE = 'canhotos-v9';   ->   'canhotos-v10'
+
+
+PENDÊNCIA DE SEGURANÇA
+----------------------
+O repositório é público (exigência do GitHub Pages no plano free), então o
+PIN de admin está legível no código. A proteção real seria mover a validação
+para as regras do Firestore.

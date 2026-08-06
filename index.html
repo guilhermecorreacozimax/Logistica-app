@@ -143,6 +143,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
 .lb-close{position:fixed;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .spinner{display:inline-block;width:16px;height:16px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Tipo de foto ────────────────────────────────────────── */
+.tipo-sel{display:flex;border:.5px solid var(--border-md);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:8px}
+.tipo-sel button{flex:1;padding:9px 8px;background:var(--bg);border:none;color:var(--muted);font-size:13px;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.tipo-sel button.on{background:var(--accent);color:#fff;font-weight:600}
+.tipo-hint{font-size:11.5px;color:var(--muted);margin-bottom:9px;line-height:1.45}
+.badge-tipo{position:absolute;bottom:4px;left:4px;font-size:9px;font-weight:700;letter-spacing:.03em;padding:2px 6px;border-radius:20px;text-transform:uppercase;pointer-events:none}
+.bt-can{background:var(--accent);color:#fff}
+.bt-ass{background:#6d3fc4;color:#fff}
+.bt-nid{background:var(--warning);color:#1a1a18}
+.sel-mini{width:100%;padding:4px;margin-top:3px;border:.5px solid var(--border-md);border-radius:6px;background:var(--bg);color:var(--text);font-size:11px;font-family:inherit}
+.sem-nf{display:inline-flex;align-items:center;gap:4px;background:var(--warning-bg);color:var(--warning);border-radius:20px;padding:2px 8px;font-size:11px;font-weight:600;margin-left:6px}
+.chip-falta{background:var(--warning-bg)!important;color:var(--warning)!important;border-color:var(--warning)!important;border-style:dashed!important}
 </style>
 </head>
 <body>
@@ -207,7 +220,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
         </div>
       </div>
       <div>
-        <span class="foto-label">Fotos do canhoto</span>
+        <span class="foto-label">Fotos</span>
+        <div class="tipo-sel">
+          <button type="button" class="on" id="tp-can" onclick="setTipoFoto('canhoto')"><i class="ti ti-receipt"></i> Canhoto</button>
+          <button type="button" id="tp-ass" onclick="setTipoFoto('assistencia')"><i class="ti ti-tool"></i> Assistência</button>
+        </div>
+        <div class="tipo-hint" id="tipo-hint">Fotografe os canhotos, depois troque para Assistência. A escolha vale para as próximas fotos até salvar.</div>
         <input type="file" accept="image/*" multiple id="cam-in" onchange="onFotos(event)">
         <div class="foto-grid" id="fotos-prev">
           <div class="foto-add" onclick="document.getElementById('cam-in').click()">
@@ -235,6 +253,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
     </div>
     <div id="painel-admin" style="display:none">
       <div class="card" style="margin-bottom:1rem;border-color:var(--accent)">
+        <h2><i class="ti ti-tags"></i> Classificar acervo</h2>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:1rem">Marca o tipo das fotos dos registros antigos. Finalização anterior a 20/07 vira canhoto direto; de 20/07 em diante fica como "não identificado" para você conferir na edição. Rode uma vez só, antes de reabrir romaneios para acrescentar assistências.</p>
+        <button class="btn-save" onclick="classificarAcervo()" style="margin-top:0">
+          <i class="ti ti-tags"></i> Classificar registros antigos
+        </button>
+      </div>
+      <div class="card" style="margin-bottom:1rem;border-color:var(--accent)">
         <h2><i class="ti ti-wand"></i> Reprocessar OCR em lote</h2>
         <p style="font-size:13px;color:var(--muted);margin-bottom:1rem">Lê as fotos de todos os registros sem NFs cadastradas e extrai os números automaticamente. Pode demorar alguns minutos.</p>
         <div id="ocr-lote-prog" style="display:none;font-size:13px;color:var(--accent);margin-bottom:.75rem;display:flex;align-items:center;gap:6px"></div>
@@ -249,6 +274,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
         <input type="date" id="filtro-data" onchange="renderLista()">
         <button class="btn-clear" onclick="limparData()"><i class="ti ti-x"></i> Limpar</button>
       </div>
+      <label style="display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);margin-top:9px;cursor:pointer">
+        <input type="checkbox" id="filtro-sem-nf" onchange="renderLista()" style="width:16px;height:16px;accent-color:var(--accent)">
+        Mostrar somente registros sem NF
+      </label>
     </div>
     <div id="lista-reg"></div>
   </div>
@@ -302,6 +331,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
     <div style="margin-bottom:1rem">
       <div style="font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">NFs da entrega</div>
       <div id="e-nf-tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+      <div id="wrap-ler-edit" style="display:none;margin-bottom:8px">
+        <button type="button" id="btn-ler-nf-edit" onclick="lerNFsEdicao()"
+          style="width:100%;padding:10px;background:var(--accent-bg);color:var(--accent);border:.5px solid var(--accent);border-radius:var(--radius-sm);font-size:13px;cursor:pointer;font-family:inherit">
+          <i class="ti ti-scan"></i> Ler NFs das fotos deste romaneio
+        </button>
+        <div id="ocr-status-edit" style="font-size:12px;color:var(--accent);margin-top:6px;display:none;align-items:center;gap:6px">
+          <span class="spinner" style="color:var(--accent);width:12px;height:12px;border-width:1.5px"></span> Lendo…
+        </div>
+      </div>
       <div style="display:flex;gap:6px">
         <input type="text" id="e-nf-add-input" placeholder="Adicionar NF (ex: 758723)"
           style="flex:1;padding:9px 12px;border:.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-size:14px;font-family:inherit"
@@ -426,24 +464,147 @@ function acharNoTexto(txt){
   return achados;
 }
 
-async function extrairNFs(imageUrl){
-  try {
-    const w = await getTesseract();
-    await w.setParameters({ tessedit_char_whitelist: '0123456789.NºoSÉRIEnf-e ' });
-    const img = await carregarImg(imageUrl);
-    // Algumas fotos são tiradas de lado. Testamos as rotações em ordem de
-    // probabilidade e paramos assim que uma delas render resultado.
-    for(const graus of [0, 90, 270, 180]){
-      try {
-        const cv = preparar(img, graus);
-        const { data } = await w.recognize(cv);
-        const achados = acharNoTexto(data.text || '');
-        if(achados.length) return achados.slice(0, 40);
-      } catch(e){ /* tenta a próxima rotação */ }
-    }
-    return [];
-  } catch(e){ console.warn('OCR erro:', e); return []; }
+// Confere se a foto é mesmo um canhoto. A guia de assistência também traz
+// "COZIMAX MOVEIS MIRASSOL LTDA" no cabeçalho, então "COZIMAX" não serve de
+// âncora — o que distingue é o "RECEBEMOS DE" do canhoto.
+function ehCanhoto(txt){
+  const t = (txt||'').toUpperCase().replace(/\s+/g,' ');
+  if(/ORDEM\s+DE\s+ASSIST/.test(t)) return false;      // é guia de assistência
+  return /RECEBEMOS\s+DE/.test(t) || /NF-?E/.test(t);
 }
+
+// Lê UMA foto, testando rotações. Devolve o que achou e se era canhoto.
+async function lerUmaFoto(imageUrl){
+  const w = await getTesseract();
+  await w.setParameters({ tessedit_char_whitelist: '0123456789.NºoSÉRIEnf-eRCBMDAIST ' });
+  const img = await carregarImg(imageUrl);
+  let melhor = { nfs: [], canhoto: false };
+  for(const graus of [0, 90, 270, 180]){
+    try {
+      const cv = preparar(img, graus);
+      const { data } = await w.recognize(cv);
+      const txt = data.text || '';
+      const canhoto = ehCanhoto(txt);
+      const nfs = canhoto ? acharNoTexto(txt) : [];
+      if(nfs.length) return { nfs, canhoto: true };     // achou: para por aqui
+      if(canhoto && !melhor.canhoto) melhor = { nfs: [], canhoto: true };
+    } catch(e){ /* tenta a próxima rotação */ }
+  }
+  return melhor;
+}
+
+// Aponta os números que faltam entre os que foram lidos. Como as NFs de uma
+// mesma folha são sequenciais, um buraco quase sempre é falha de leitura.
+// Só sugere lacunas pequenas, para não inventar sequência inteira.
+function acharLacunas(nfs){
+  const ns = nfs.map(Number).filter(n => !isNaN(n)).sort((a,b) => a-b);
+  const faltando = [];
+  for(let i = 1; i < ns.length; i++){
+    const salto = ns[i] - ns[i-1];
+    if(salto > 1 && salto <= 6){
+      for(let v = ns[i-1]+1; v < ns[i]; v++) faltando.push(String(v).padStart(6,'0').slice(-6));
+    }
+  }
+  return faltando;
+}
+
+// Lê TODAS as fotos indicadas. Antes lia só a primeira, que era a maior
+// causa de NFs faltando quando o romaneio tinha várias folhas.
+async function extrairNFsDeVarias(urls, aoProgredir){
+  const todas = [];
+  let lidas = 0, ignoradas = 0;
+  for(let i = 0; i < urls.length; i++){
+    if(aoProgredir) aoProgredir(i+1, urls.length);
+    try {
+      const r = await lerUmaFoto(urls[i]);
+      if(!r.canhoto){ ignoradas++; continue; }
+      lidas++;
+      r.nfs.forEach(n => { if(!todas.includes(n)) todas.push(n); });
+    } catch(e){ /* segue para a próxima foto */ }
+  }
+  todas.sort();
+  return { nfs: todas, lidas, ignoradas, lacunas: acharLacunas(todas) };
+}
+
+// Mantida por compatibilidade com o reprocessamento em lote
+async function extrairNFs(imageUrl){
+  try { const r = await lerUmaFoto(imageUrl); return r.nfs; }
+  catch(e){ console.warn('OCR erro:', e); return []; }
+}
+
+// ── Tipo de foto ───────────────────────────────────────────────────────────
+// Data em que Guilherme começou a subir guias de assistência. Antes disso os
+// registros só têm canhotos, então o backfill os classifica sem precisar ler.
+const INICIO_ASSISTENCIAS = '2026-07-20';
+
+let tipoFotoAtual = 'canhoto';   // vale para as próximas fotos, até salvar
+let tipoFotoEdit  = 'canhoto';
+
+window.setTipoFoto = (t) => {
+  tipoFotoAtual = t;
+  document.getElementById('tp-can').classList.toggle('on', t === 'canhoto');
+  document.getElementById('tp-ass').classList.toggle('on', t === 'assistencia');
+  document.getElementById('tipo-hint').textContent = t === 'canhoto'
+    ? 'Fotografe os canhotos, depois troque para Assistência. A escolha vale para as próximas fotos até salvar.'
+    : 'As próximas fotos entram como assistência e o leitor de NF vai ignorá-las.';
+};
+
+window.setTipoFotoEdit = (t) => {
+  tipoFotoEdit = t;
+  const a = document.getElementById('tpe-can'), b = document.getElementById('tpe-ass');
+  if(a) a.classList.toggle('on', t === 'canhoto');
+  if(b) b.classList.toggle('on', t === 'assistencia');
+};
+
+window.mudarTipoEdit = (i, t) => {
+  if(editFotos[i]) editFotos[i].tipo = t;
+  renderEditFotos();
+};
+
+function classeTipo(t){
+  return t === 'assistencia' ? 'bt-ass' : t === 'canhoto' ? 'bt-can' : 'bt-nid';
+}
+function rotuloTipo(t){
+  return t === 'assistencia' ? 'assist.' : t === 'canhoto' ? 'canhoto' : 'não ident.';
+}
+
+// Classifica os registros que ainda não têm tipo nas fotos. Roda UMA vez:
+// depois disso o tipo vem sempre do seletor do upload, inclusive nos
+// romaneios antigos que forem reabertos para receber assistências.
+window.classificarAcervo = async () => {
+  const d = ldb();
+  const pendentes = d.r.filter(r =>
+    Array.isArray(r.fotos) && r.fotos.length &&
+    (!Array.isArray(r.tiposFotos) || r.tiposFotos.length !== r.fotos.length));
+
+  if(!pendentes.length){ alert('Todos os registros já estão classificados.'); return; }
+
+  const antigos = pendentes.filter(r => (r.dt||'') < INICIO_ASSISTENCIAS);
+  const recentes = pendentes.length - antigos.length;
+
+  if(!confirm(
+      `${pendentes.length} registro(s) sem classificação.\n\n`+
+      `${antigos.length} com finalização anterior a 20/07 serão marcados como canhoto direto.\n`+
+      `${recentes} de 20/07 em diante ficarão como "não identificado" para você conferir.\n\nContinuar?`)) return;
+
+  let n = 0;
+  for(const r of pendentes){
+    const antigo = (r.dt||'') < INICIO_ASSISTENCIAS;
+    const tipos = r.fotos.map(() => antigo ? 'canhoto' : 'nid');
+    const idx = d.r.findIndex(x => x.id === r.id);
+    if(idx >= 0){
+      d.r[idx].tiposFotos = tipos;
+      lsave(d);
+      if(navigator.onLine){
+        try{ await setDoc(doc(db,'registros',r.id), {...d.r[idx], _sync:serverTimestamp()}); }
+        catch(e){ console.warn('Firebase classificacao:', e.message); }
+      }
+      n++;
+    }
+  }
+  alert(`${n} registro(s) classificado(s).`);
+  renderLista();
+};
 
 // Mostra a área de NFs assim que existe foto, sem rodar OCR
 function mostrarAreaNF(){
@@ -455,43 +616,99 @@ function mostrarAreaNF(){
 }
 
 // Leitura sob demanda: só roda quando o usuário clica.
-window.lerNFsAgora = async () => {
-  const prontas = fotos.filter(f => f.url && !f.uploading);
-  if(!prontas.length){ alert('Adicione uma foto antes de ler as NFs.'); return; }
-
-  const btn   = document.getElementById('btn-ler-nf');
-  const ocrSt = document.getElementById('ocr-status');
+// Junta o resultado das várias fotos e mostra as lacunas encontradas.
+async function executarLeitura(urls, btn, statusEl, listaAtual, aoAceitar){
   const antes = btn.innerHTML;
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner" style="width:12px;height:12px;border-width:1.5px"></span> Lendo…';
-  if(ocrSt) ocrSt.style.display = 'flex';
+  if(statusEl) statusEl.style.display = 'flex';
+
+  const marcarProgresso = (i, total) => {
+    btn.innerHTML = `<span class="spinner" style="width:12px;height:12px;border-width:1.5px"></span> Lendo foto ${i} de ${total}…`;
+  };
 
   try {
-    const achados = await extrairNFs(prontas[0].url);
-    const novas = achados.filter(n => !nfList.includes(n));
+    const r = await extrairNFsDeVarias(urls, marcarProgresso);
+    const novas = r.nfs.filter(n => !listaAtual.includes(n));
 
-    if(!achados.length){
-      alert('Nenhuma NF foi lida nesta foto. Adicione manualmente no campo abaixo.');
-    } else if(!novas.length){
-      alert('As NFs lidas já estavam na lista.');
-    } else if(nfList.length && !confirm(
-        `Leitura encontrou: ${novas.join(', ')}\n\nAcrescentar às ${nfList.length} NF(s) já cadastradas?`)){
-      // usuário recusou: nada é alterado
-    } else {
-      novas.forEach(n => nfList.push(n));
-      renderNFTags();
+    let resumo = `${r.lidas} foto(s) de canhoto lida(s)`;
+    if(r.ignoradas) resumo += `, ${r.ignoradas} ignorada(s) por não ser canhoto`;
+
+    if(!r.nfs.length){
+      alert(`${resumo}.\n\nNenhuma NF foi lida. Adicione manualmente no campo abaixo.`);
+      return;
     }
+    if(!novas.length){
+      alert(`${resumo}.\n\nAs NFs lidas já estavam na lista.`);
+      return;
+    }
+
+    let msg = `${resumo}.\n\nEncontrado: ${novas.join(', ')}`;
+    if(r.lacunas.length){
+      const faltam = r.lacunas.filter(n => !listaAtual.includes(n) && !novas.includes(n));
+      if(faltam.length){
+        msg += `\n\nSalto na sequência — provavelmente não foram lidas: ${faltam.join(', ')}`;
+        msg += `\nElas entram marcadas para você confirmar ou remover.`;
+        novas.push(...faltam);
+      }
+    }
+    if(listaAtual.length) msg += `\n\nAcrescentar às ${listaAtual.length} NF(s) já cadastradas?`;
+
+    if(listaAtual.length && !confirm(msg)){ return; }
+    if(!listaAtual.length) alert(msg);
+
+    aoAceitar(novas, r.lacunas);
   } catch(e){
-    alert('Falha ao ler a foto: ' + e.message);
+    alert('Falha ao ler as fotos: ' + e.message);
   } finally {
     btn.disabled = false;
     btn.innerHTML = antes;
-    if(ocrSt) ocrSt.style.display = 'none';
+    if(statusEl) statusEl.style.display = 'none';
   }
+}
+
+window.lerNFsAgora = async () => {
+  const prontas = fotos.filter(f => f.url && !f.uploading && (f.tipo||'canhoto') === 'canhoto');
+  if(!prontas.length){
+    alert(fotos.length
+      ? 'Nenhuma foto marcada como canhoto. Troque o tipo ou adicione uma foto de canhoto.'
+      : 'Adicione uma foto antes de ler as NFs.');
+    return;
+  }
+  await executarLeitura(
+    prontas.map(f => f.url),
+    document.getElementById('btn-ler-nf'),
+    document.getElementById('ocr-status'),
+    nfList,
+    (novas, lacunas) => {
+      novas.forEach(n => { if(!nfList.includes(n)) nfList.push(n); });
+      nfIncertas = lacunas.filter(n => nfList.includes(n));
+      renderNFTags();
+    });
+};
+
+// Leitura dentro da edição — restrita a admin
+window.lerNFsEdicao = async () => {
+  if(!isAdmin()){ alert('Apenas o admin pode executar a leitura.'); return; }
+  const prontas = editFotos.filter(f => f.url && !f.uploading && (f.tipo||'') === 'canhoto');
+  if(!prontas.length){
+    alert('Nenhuma foto marcada como canhoto neste registro. Ajuste o tipo das fotos abaixo.');
+    return;
+  }
+  await executarLeitura(
+    prontas.map(f => f.url),
+    document.getElementById('btn-ler-nf-edit'),
+    document.getElementById('ocr-status-edit'),
+    nfListEdit,
+    (novas, lacunas) => {
+      novas.forEach(n => { if(!nfListEdit.includes(n)) nfListEdit.push(n); });
+      nfIncertasEdit = lacunas.filter(n => nfListEdit.includes(n));
+      renderNFTagsEdit();
+    });
 };
 
 // ── NF tags — novo registro ────────────────────────────────────────────────
-let nfList = []; // array de strings
+let nfList = [];      // array de strings
+let nfIncertas = [];  // sugeridas por salto na sequência, não lidas de fato
 
 window.adicionarNFManual = () => {
   const inp = document.getElementById('nf-add-input');
@@ -513,17 +730,20 @@ function renderNFTags(){
     ph.style.display   = 'none';
   }
   document.getElementById('nf-tags').innerHTML = nfList.map(nf =>
-    `<span style="display:inline-flex;align-items:center;gap:5px;background:var(--accent-bg);color:var(--accent);
+    `<span class="${nfIncertas.includes(nf)?'chip-falta':''}" style="display:inline-flex;align-items:center;gap:5px;background:var(--accent-bg);color:var(--accent);
       border:.5px solid var(--accent);border-radius:20px;padding:4px 10px;font-size:13px;font-weight:500">
-      ${nf}
-      <button onclick="removerNF('${nf}')" style="background:none;border:none;color:var(--accent);cursor:pointer;
+      ${nf}${nfIncertas.includes(nf)?' ?':''}
+      <button onclick="removerNF('${nf}')" style="background:none;border:none;color:inherit;cursor:pointer;
         font-size:14px;line-height:1;padding:0;display:flex;align-items:center">×</button>
     </span>`
-  ).join('');
+  ).join('') + (nfIncertas.length
+    ? `<div style="font-size:11.5px;color:var(--warning);margin-top:6px;line-height:1.4">As marcadas com ? vieram de salto na sequência, não foram lidas. Confira no papel.</div>`
+    : '');
 }
 
 // ── NF tags — edição ───────────────────────────────────────────────────────
 let nfListEdit = [];
+let nfIncertasEdit = [];
 
 window.adicionarNFEdit = () => {
   const inp = document.getElementById('e-nf-add-input');
@@ -540,10 +760,10 @@ window.removerNFEdit = (nf) => {
 function renderNFTagsEdit(){
   document.getElementById('e-nf-tags').innerHTML = nfListEdit.length
     ? nfListEdit.map(nf =>
-        `<span style="display:inline-flex;align-items:center;gap:5px;background:var(--accent-bg);color:var(--accent);
+        `<span class="${nfIncertasEdit.includes(nf)?'chip-falta':''}" style="display:inline-flex;align-items:center;gap:5px;background:var(--accent-bg);color:var(--accent);
           border:.5px solid var(--accent);border-radius:20px;padding:4px 10px;font-size:13px;font-weight:500">
-          ${nf}
-          <button onclick="removerNFEdit('${nf}')" style="background:none;border:none;color:var(--accent);cursor:pointer;
+          ${nf}${nfIncertasEdit.includes(nf)?' ?':''}
+          <button onclick="removerNFEdit('${nf}')" style="background:none;border:none;color:inherit;cursor:pointer;
             font-size:14px;line-height:1;padding:0;display:flex;align-items:center">×</button>
         </span>`
       ).join('')
@@ -680,6 +900,7 @@ function iniciarEscuta(){
         romNum:  r.romNum||'',
         motNome: r.motNome||'',
         nfNums:  Array.isArray(r.nfNums) ? r.nfNums.map(normNF).filter(Boolean) : [],
+        tiposFotos: Array.isArray(r.tiposFotos) ? r.tiposFotos : [],
         dt:      r.dt||'',
         em:      r.em||'',
         fotos:   Array.isArray(r.fotos)?r.fotos:[],
@@ -727,16 +948,15 @@ window.onFotos = async (e) => {
     }
     st.classList.remove('show');
     const idx = fotos.length;
-    fotos.push({ url:null, thumb:null, uploading:true, progress:0 });
+    fotos.push({ url:null, thumb:null, uploading:true, progress:0, tipo:tipoFotoAtual });
     uploadando++;
     renderFotos();
     try{
       const res = await uploadCloudinary(file, pct => {
         fotos[idx].progress = pct; renderFotos();
       });
-      fotos[idx] = { url:res.url, thumb:res.thumb, uploading:false, progress:100 };
-      // OCR não roda mais aqui: era isso que segurava o salvamento.
-      // Agora só quando o usuário pedir, pelo botão "Ler NFs da foto".
+      fotos[idx] = { url:res.url, thumb:res.thumb, uploading:false, progress:100, tipo:fotos[idx].tipo };
+      // OCR não roda aqui: era isso que segurava o salvamento.
       if(idx === 0) mostrarAreaNF();
     } catch(err){
       fotos.splice(idx,1);
@@ -755,7 +975,7 @@ window.renderFotos = () => {
     fotos.map((f,i) =>
       f.uploading
         ? `<div class="foto-item"><div style="width:100%;height:100%;background:var(--bg);border-radius:var(--radius-sm);border:.5px solid var(--border);display:flex;align-items:center;justify-content:center"><span class="spinner" style="color:var(--accent)"></span></div><div class="prog">${f.progress}%</div></div>`
-        : `<div class="foto-item"><img src="${f.thumb||f.url}" loading="lazy" onclick="openLb('${f.url}')"><button class="rm" onclick="remFoto(${i})">✕</button></div>`
+        : `<div class="foto-item"><img src="${f.thumb||f.url}" loading="lazy" onclick="openLb('${f.url}')"><button class="rm" onclick="remFoto(${i})">✕</button><span class="badge-tipo ${classeTipo(f.tipo)}">${rotuloTipo(f.tipo)}</span></div>`
     ).join('') +
     `<div class="foto-add" onclick="document.getElementById('cam-in').click()"><i class="ti ti-camera-plus"></i><span>Adicionar</span></div>`;
 };
@@ -780,7 +1000,8 @@ window.salvarReg = async () => {
   const regId = uid();
   const urls   = fotos.map(f=>f.url).filter(Boolean);
   const thumbs = fotos.map(f=>f.thumb||f.url).filter(Boolean);
-  const reg = { id:regId, romNum:rom, motNome:mot, dt, nfNums:nfList, fotos:urls, thumbs, em:new Date().toISOString() };
+  const tipos = fotos.filter(f=>f.url).map(f => f.tipo || 'canhoto');
+  const reg = { id:regId, romNum:rom, motNome:mot, dt, nfNums:nfList, fotos:urls, thumbs, tiposFotos:tipos, em:new Date().toISOString() };
 
   const d = ldb(); d.r.unshift(reg); lsave(d);
 
@@ -802,7 +1023,7 @@ window.salvarReg = async () => {
   ok.classList.add('show');
   document.getElementById('f-rom').value='';
   document.getElementById('f-mot').value='';
-  nfList=[]; renderNFTags();
+  nfList=[]; nfIncertas=[]; setTipoFoto('canhoto'); renderNFTags();
   document.getElementById('nf-review-area').style.display='none';
   document.getElementById('nf-review-placeholder').style.display='block';
   fotos=[]; renderFotos();
@@ -816,12 +1037,14 @@ window.renderLista = () => {
   const d = ldb();
   const busca = (document.getElementById('busca')?.value||'').toLowerCase().trim();
   const dataF = document.getElementById('filtro-data')?.value||'';
+  const soSemNF = document.getElementById('filtro-sem-nf')?.checked || false;
   const hoje  = new Date().toDateString();
 
   document.getElementById('s-total').textContent = d.r.length;
   document.getElementById('s-hoje').textContent  = d.r.filter(r=>new Date(r.dt).toDateString()===hoje).length;
 
   const list = d.r.filter(r => {
+    const semNFok = !soSemNF || !(Array.isArray(r.nfNums) && r.nfNums.length);
     const textoOk = !busca ||
       (r.romNum+'').toLowerCase().includes(busca) ||
       (r.motNome+'').toLowerCase().includes(busca) ||
@@ -831,7 +1054,7 @@ window.renderLista = () => {
         return r.nfNums.some(n => normNF(n).includes(q));
       })());
     const dataOk  = !dataF  || isoDate(r.dt)===dataF;
-    return textoOk && dataOk;
+    return textoOk && dataOk && semNFok;
   });
 
   const el = document.getElementById('lista-reg');
@@ -863,7 +1086,9 @@ window.renderLista = () => {
             : `<div class="thumb-ph"><i class="ti ti-file-text"></i></div>`}
           <div class="reg-info">
             <div class="t">${r.romNum}</div>
-            <div class="s">${r.motNome} · ${fmtDt(r.dt)}${r.nfNums&&r.nfNums.length?' · NFs: '+r.nfNums.slice(0,3).join(', ')+(r.nfNums.length>3?' …':''):''}</div>
+            <div class="s">${r.motNome} · ${fmtDt(r.dt)}${r.nfNums&&r.nfNums.length
+              ? ' · NFs: '+r.nfNums.slice(0,3).join(', ')+(r.nfNums.length>3?' …':'')
+              : '<span class="sem-nf"><i class="ti ti-alert-circle" style="font-size:11px"></i>sem NF</span>'}</div>
           </div>
           <i class="ti ti-chevron-right" style="color:var(--muted);flex-shrink:0"></i>
         </div>`;
@@ -915,11 +1140,15 @@ window.abrirEdicao = () => {
   document.getElementById('e-mot').value = r.motNome;
   document.getElementById('e-dt').value  = r.dt?r.dt.slice(0,16):'';
   nfListEdit = Array.isArray(r.nfNums)?[...r.nfNums]:[];
+  nfIncertasEdit = [];
+  const wrapLer = document.getElementById('wrap-ler-edit');
+  if(wrapLer) wrapLer.style.display = isAdmin() ? 'block' : 'none';
   renderNFTagsEdit();
   // Monta array de fotos existentes
   const urls   = Array.isArray(r.fotos)?r.fotos:[];
   const thumbs = Array.isArray(r.thumbs)?r.thumbs:[];
-  editFotos = urls.map((u,i)=>({ url:u, thumb:thumbs[i]||u, uploading:false, progress:100 }));
+  const tps = Array.isArray(r.tiposFotos) ? r.tiposFotos : [];
+  editFotos = urls.map((u,i)=>({ url:u, thumb:thumbs[i]||u, uploading:false, progress:100, tipo: tps[i] || 'nid' }));
   renderEditFotos();
   document.getElementById('edit-err').classList.remove('show');
   document.getElementById('modal-edit-bg').classList.add('open');
@@ -934,12 +1163,12 @@ window.onFotosEdit = async (e) => {
     if(!navigator.onLine){ st.innerHTML='<i class="ti ti-alert-circle"></i> Sem internet.'; st.classList.add('show'); return; }
     st.classList.remove('show');
     const idx = editFotos.length;
-    editFotos.push({ url:null, thumb:null, uploading:true, progress:0 });
+    editFotos.push({ url:null, thumb:null, uploading:true, progress:0, tipo:tipoFotoEdit });
     editUpload++;
     renderEditFotos();
     try{
       const res = await uploadCloudinary(file, pct => { editFotos[idx].progress=pct; renderEditFotos(); });
-      editFotos[idx] = { url:res.url, thumb:res.thumb, uploading:false, progress:100 };
+      editFotos[idx] = { url:res.url, thumb:res.thumb, uploading:false, progress:100, tipo:editFotos[idx].tipo };
     } catch(err){
       editFotos.splice(idx,1);
       st.innerHTML=`<i class="ti ti-alert-circle"></i> Erro: ${err.message}`; st.classList.add('show');
@@ -956,7 +1185,12 @@ window.renderEditFotos = () => {
     editFotos.map((f,i) =>
       f.uploading
         ? `<div class="edit-foto-item"><div style="width:100%;height:100%;background:var(--bg);border-radius:6px;border:.5px solid var(--border);display:flex;align-items:center;justify-content:center"><span class="spinner" style="color:var(--accent)"></span></div><div class="prog">${f.progress}%</div></div>`
-        : `<div class="edit-foto-item"><img src="${f.thumb||f.url}" loading="lazy"><button class="rm" onclick="remEditFoto(${i})">✕</button></div>`
+        : `<div><div class="edit-foto-item"><img src="${f.thumb||f.url}" loading="lazy"><button class="rm" onclick="remEditFoto(${i})">✕</button><span class="badge-tipo ${classeTipo(f.tipo)}">${rotuloTipo(f.tipo)}</span></div>`+
+          (isAdmin() ? `<select class="sel-mini" onchange="mudarTipoEdit(${i},this.value)">
+             <option value="canhoto" ${f.tipo==='canhoto'?'selected':''}>Canhoto</option>
+             <option value="assistencia" ${f.tipo==='assistencia'?'selected':''}>Assistência</option>
+             <option value="nid" ${(!f.tipo||f.tipo==='nid')?'selected':''}>Não identificado</option>
+           </select>` : '') + `</div>`
     ).join('') +
     `<div class="edit-foto-add" onclick="document.getElementById('cam-edit').click()"><i class="ti ti-camera-plus"></i><span>Adicionar</span></div>`;
 };
@@ -981,7 +1215,8 @@ window.salvarEdicao = async () => {
 
   const urls   = editFotos.map(f=>f.url).filter(Boolean);
   const thumbs = editFotos.map(f=>f.thumb||f.url).filter(Boolean);
-  const reg = { ...d.r[idx], romNum:rom, motNome:mot, nfNums:nfListEdit, dt, fotos:urls, thumbs, em:new Date().toISOString() };
+  const tiposE = editFotos.filter(f=>f.url).map(f => f.tipo || 'nid');
+  const reg = { ...d.r[idx], romNum:rom, motNome:mot, nfNums:nfListEdit, dt, fotos:urls, thumbs, tiposFotos:tiposE, em:new Date().toISOString() };
   d.r[idx]=reg; lsave(d);
 
   if(navigator.onLine){
@@ -1011,7 +1246,7 @@ function atualizarPainelAdmin(){
 
 // ── Reprocessar OCR em lote ────────────────────────────────────────────────
 window.reprocessarLote = async () => {
-  if(!confirm('Isso irá processar as fotos de todos os registros sem NFs cadastradas. Pode demorar alguns minutos. Continuar?')) return;
+  if(!confirm('Isso irá ler as fotos de canhoto de todos os registros sem NFs cadastradas. Pode demorar alguns minutos. Continuar?')) return;
   const btn  = document.getElementById('btn-ocr-lote');
   const prog = document.getElementById('ocr-lote-prog');
   btn.disabled = true;
@@ -1034,7 +1269,15 @@ window.reprocessarLote = async () => {
     prog.innerHTML = `<span class="spinner" style="color:var(--accent);width:12px;height:12px;border-width:1.5px"></span>&nbsp;
       Processando ${i+1} de ${semNF.length} — ${extraidos} extraídos, ${semResultado} sem resultado`;
     try{
-      const nfs = await extrairNFs(r.fotos[0]);
+      // Só as fotos marcadas como canhoto. Sem classificação, tenta todas —
+      // a âncora "RECEBEMOS DE" descarta as assistências na leitura.
+      const tps = Array.isArray(r.tiposFotos) ? r.tiposFotos : [];
+      const alvos = tps.length === r.fotos.length
+        ? r.fotos.filter((_,k) => tps[k] === 'canhoto')
+        : r.fotos;
+      if(!alvos.length){ semResultado++; continue; }
+      const res = await extrairNFsDeVarias(alvos);
+      const nfs = res.nfs;
       const idx = d.r.findIndex(x => x.id === r.id);
       if(idx >= 0){
         d.r[idx].nfNums = nfs;
